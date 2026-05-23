@@ -2095,10 +2095,7 @@ fun AppSplashScreen() {
     }
 }
 
-// ------------------------------------------------------------------------
-// SCREEN: Google Authenticated Login Chooser (Remodeled Layout)
-// ------------------------------------------------------------------------
-@OptIn(ExperimentalMaterial3Api::class)
+// ------------------------------------------------------------------------@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onGoogleLogin: (String, String, String) -> Unit
@@ -2115,6 +2112,42 @@ fun LoginScreen(
             repeatMode = RepeatMode.Reverse
         ),
         label = "ScaleAnimation"
+    )
+
+    // Premium Card Entry Animations (Scale & Fade-In)
+    val cardAlpha = remember { Animatable(0f) }
+    val cardScale = remember { Animatable(0.93f) }
+    val EaseOutBack = remember { CubicBezierEasing(0.34f, 1.56f, 0.64f, 1.0f) }
+    
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.launch {
+            cardAlpha.animateTo(1.0f, animationSpec = tween(700, easing = LinearOutSlowInEasing))
+        }
+        kotlinx.coroutines.launch {
+            cardScale.animateTo(1.0f, animationSpec = tween(700, easing = EaseOutBack))
+        }
+    }
+
+    // Circular green cap badge breathing animation
+    val badgeScale by infiniteTransition.animateFloat(
+        initialValue = 0.96f,
+        targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "BadgeScale"
+    )
+
+    // Primary Google Sign-in Button breathing attention animation
+    val btnScale by infiniteTransition.animateFloat(
+        initialValue = 0.98f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "BtnScale"
     )
 
     Box(
@@ -2135,15 +2168,20 @@ fun LoginScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF1B4AB4).copy(alpha = 0.45f))
+                .background(Color(0xFF1B4AB4).copy(alpha = 0.85f)) // Set overlay to high quality 0.85f blue as modeled
         )
 
-        // Centered white elevation card
+        // Centered white elevation card with smooth entrance
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = 420.dp)
-                .padding(28.dp),
+                .padding(28.dp)
+                .graphicsLayer(
+                    scaleX = cardScale.value,
+                    scaleY = cardScale.value,
+                    alpha = cardAlpha.value
+                ),
             shape = RoundedCornerShape(32.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(32.dp)
@@ -2154,17 +2192,18 @@ fun LoginScreen(
                     .padding(vertical = 48.dp, horizontal = 36.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Circular Academic Icon in Mint/Green
+                // Circular Academic Icon in Mint/Green with breathing animation
                 Box(
                     modifier = Modifier
                         .size(92.dp)
-                        .background(Color(0xFFD1FAE5), CircleShape),
+                        .graphicsLayer(scaleX = badgeScale, scaleY = badgeScale)
+                        .background(Color(0xFFECFDF5), CircleShape), // Updated to correct lighter green Color(0xFFECFDF5)
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Filled.School,
                         contentDescription = "Graduation Cap",
-                        tint = Color(0xFF059669),
+                        tint = Color(0xFF10B981), // Updated to matching emerald green Color(0xFF10B981)
                         modifier = Modifier.size(52.dp)
                     )
                 }
@@ -2174,9 +2213,10 @@ fun LoginScreen(
                 Text(
                     text = "Poder da Conexão",
                     style = MaterialTheme.typography.headlineMedium.copy(
-                        color = Color(0xFF1A1F71), // Darker Navy
+                        color = Color(0xFF0F172A), // Updated to premium slate Color(0xFF0F172A)
                         fontWeight = FontWeight.Bold,
-                        fontSize = 32.sp
+                        fontSize = 32.sp,
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Serif
                     ),
                     textAlign = TextAlign.Center
                 )
@@ -2184,8 +2224,8 @@ fun LoginScreen(
                 Text(
                     text = "Portal Educacional",
                     style = MaterialTheme.typography.titleMedium.copy(
-                        color = Color(0xFF4A4A4A),
-                        fontWeight = FontWeight.Normal,
+                        color = Color(0xFF64748B), // Updated to premium Slate500 Color(0xFF64748B)
+                        fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     ),
                     modifier = Modifier.padding(top = 2.dp)
@@ -2193,14 +2233,15 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(44.dp))
 
-                // Standardized Student Google Login Button with Darker Border
+                // Standardized Student Google Login Button with Darker Border and breathing attention
                 Surface(
                     onClick = { showGoogleChooser = true },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(64.dp),
+                        .height(64.dp)
+                        .graphicsLayer(scaleX = btnScale, scaleY = btnScale),
                     shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.8.dp, Color(0xFF1A1F71)),
+                    border = BorderStroke(1.8.dp, Color(0xFF1E293B)), // Updated to slate border matching mockup
                     color = Color.White,
                     shadowElevation = 2.dp
                 ) {
@@ -2209,22 +2250,26 @@ fun LoginScreen(
                         horizontalArrangement = Arrangement.Center,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
-                        // Google "G" Icon simulation
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(28.dp)) {
-                            // Using a box with 4 colors to simulate Google 'G' if not using resource
-                            Icon(
-                                imageVector = Icons.Filled.AccountCircle,
-                                contentDescription = null,
-                                tint = Color(0xFF4285F4),
-                                modifier = Modifier.fillMaxSize()
+                        // circular red "G" badge
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .background(Color(0xFFEA4335), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "G",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
                             )
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Text(
                             text = "Entrar com o Google de Estudante",
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold, // Updated to match bold typography
                             fontSize = 16.sp,
-                            color = Color.Black
+                            color = Color(0xFF1E293B) // Slate navy Color(0xFF1E293B)
                         )
                     }
                 }
