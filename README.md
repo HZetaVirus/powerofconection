@@ -1,21 +1,36 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Poder da Conexão
 
-# Run and deploy your AI Studio app
+Uma plataforma acadêmica e colaborativa desenvolvida especificamente para estudantes de Pedagogia, focada em fortalecer a rede de apoio e o compartilhamento de conhecimento.
 
-This contains everything you need to run your app locally.
+## Interface do Aplicativo
 
-View your app in AI Studio: https://ai.studio/apps/c0a63b2c-497b-42fa-97bc-9d24c9cf27fb
+O aplicativo oferece uma interface intuitiva e modular, organizada para facilitar o acesso às ferramentas essenciais do dia a dia acadêmico:
 
-## Run Locally
+### 1. Painel Principal (Dashboard)
+O coração do aplicativo, onde o usuário encontra um resumo das atividades recentes, destaques de materiais e atalhos rápidos para todas as seções principais.
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+### 2. Hub de Ajuda e Grupos
+Uma seção dedicada à colaboração direta:
+- **Pedidos de Ajuda:** Espaço para postar dúvidas específicas onde outros colegas podem responder.
+- **Grupos de Estudo:** Criação e gestão de grupos focados em disciplinas ou tópicos de interesse comum.
 
+### 3. Mapas Mentais
+Ferramenta visual para organização de conteúdo, permitindo que os alunos criem, visualizem e compartilhem diagramas de estudo para facilitar a memorização e o planejamento pedagógico.
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+### 4. Salas de Chat e Vídeo
+Comunicação em tempo real integrada:
+- **Salas de Chat:** Canais de conversa para troca rápida de informações.
+- **Integração Jitsi:** Possibilidade de iniciar vídeoconferências diretamente pelo aplicativo para reuniões de grupo ou monitorias.
+
+### 5. Agenda Acadêmica
+Gestão de tempo com calendário integrado para acompanhamento de prazos, eventos da faculdade e reuniões agendadas pelos grupos de estudo.
+
+### 6. Mural de Publicações
+Um feed interativo onde os usuários podem compartilhar materiais, links úteis e atualizações sobre a vida acadêmica na UERJ.
+
+### 7. Gestão de Perfil e Moderação
+- **Perfis Personalizados:** Identificação por curso, período e biografia.
+- **Painel Administrativo:** Ferramentas de moderação para garantir um ambiente saudável e organizado.
+
+## Tecnologia e Design
+O projeto utiliza **Kotlin** com **Jetpack Compose**, seguindo os padrões de design **Material 3** para proporcionar uma experiência moderna, acessível e fluida.

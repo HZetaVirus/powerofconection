@@ -190,79 +190,78 @@ fun MainApp(
         }
     }
 
-    if (showSplashScreen) {
-        AppSplashScreen()
-    } else if (activeJitsiRoomName != null) {
-        JitsiInframeScreen(
-            roomName = activeJitsiRoomName!!,
-            roomTitle = activeJitsiRoomTitle ?: "Tutoria Online",
-            userName = currentUserProfile?.nome ?: "Discente da UERJ",
-            userEmail = currentUserProfile?.id ?: "estudante@uerj.br",
-            userAvatar = currentUserProfile?.foto_url ?: "",
-            onClose = {
-                activeJitsiRoomName = null
-                activeJitsiRoomTitle = null
-            }
-        )
-    } else if (currentUserId.isEmpty()) {
-        // Sign In View
-        LoginScreen(
-            onGoogleLogin = { email, name, avatar ->
-                viewModel.linkGoogleAccount(email, name, avatar)
-                Toast.makeText(context, "Sua conta do Google foi vinculada!", Toast.LENGTH_SHORT).show()
-            }
-        )
-    } else {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val isWideScreen = maxWidth >= 840.dp
-            Scaffold(
-            topBar = {
-                TopAppBar(
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        titleContentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    title = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .background(UerjBlue, RoundedCornerShape(8.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.School,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = "POWER CONNECTION",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Black,
-                                    color = UerjBlue,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = currentUserProfile?.let { "${it.curso} - ${it.periodo}" } ?: "Pedagogia UERJ",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    },
-                    actions = {
-                        // Edit / View Profile Button
-                        IconButton(onClick = { showEditProfileDialog = true }) {
+    Crossfade(targetState = showSplashScreen, label = "screen_transition") { isSplash ->
+        if (isSplash) {
+            AppSplashScreen()
+        } else if (activeJitsiRoomName != null) {
+            JitsiInframeScreen(
+                roomName = activeJitsiRoomName!!,
+                roomTitle = activeJitsiRoomTitle ?: "Tutoria Online",
+                userName = currentUserProfile?.nome ?: "Discente da UERJ",
+                userEmail = currentUserProfile?.id ?: "estudante@uerj.br",
+                userAvatar = currentUserProfile?.foto_url ?: "",
+                onClose = {
+                    activeJitsiRoomName = null
+                    activeJitsiRoomTitle = null
+                }
+            )
+        } else if (currentUserId.isEmpty()) {
+            // Sign In View
+            LoginScreen(
+                onGoogleLogin = { email, name, avatar ->
+                    viewModel.linkGoogleAccount(email, name, avatar)
+                    Toast.makeText(context, "Sua conta do Google foi vinculada!", Toast.LENGTH_SHORT).show()
+                }
+            )
+        } else {
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val isWideScreen = maxWidth >= 840.dp
+                Scaffold(
+                    topBar = {
+                        TopAppBar(
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                titleContentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            title = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .background(UerjBlue, RoundedCornerShape(12.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.School,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                    Column {
+                                        Text(
+                                            text = "Poder da Conexão",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            color = Color(0xFF1A237E),
+                                            letterSpacing = 0.5.sp
+                                        )
+                                        Text(
+                                            text = "Rede Pedagógica UERJ",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = UerjGreen,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 0.2.sp
+                                        )
+                                    }
+                                }
+                            },
+                            actions = {
+                                // Edit / View Profile Button
+                                IconButton(onClick = { showEditProfileDialog = true }) {
                             val photoUrl = currentUserProfile?.foto_url
                             if (!photoUrl.isNullOrBlank() && photoUrl.startsWith("http")) {
                                 Box(
@@ -290,7 +289,8 @@ fun MainApp(
                         }
 
                         // Notifications Badge trigger
-                        val hasUnread = userNotifications.any { !it.read }
+                        val unreadNotifications = userNotifications.filter { !it.read }
+                        val hasUnread = unreadNotifications.isNotEmpty()
                         val infiniteTransition = rememberInfiniteTransition(label = "bell_and_badge_glow")
                         val blinkingColor by infiniteTransition.animateColor(
                             initialValue = Color(0xFFFF3333), // Bright Red
@@ -344,7 +344,7 @@ fun MainApp(
                                 activeThreadDetail = null
                             },
                             icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
-                            label = { Text("Início") }
+                            label = { Text("Início", fontWeight = FontWeight.Bold) }
                         )
                         NavigationBarItem(
                             selected = currentTab == "mindmaps",
@@ -352,15 +352,15 @@ fun MainApp(
                                 currentTab = "mindmaps"
                             },
                             icon = { Icon(Icons.Filled.AccountTree, contentDescription = "Mapas") },
-                            label = { Text("Mapas") }
+                            label = { Text("Mapas", fontWeight = FontWeight.Bold) }
                         )
                         NavigationBarItem(
                             selected = currentTab == "help_groups",
                             onClick = {
                                 currentTab = "help_groups"
                             },
-                            icon = { Icon(Icons.Filled.QuestionAnswer, contentDescription = "Ajuda & Grupos") },
-                            label = { Text("Colaborar") }
+                            icon = { Icon(Icons.Filled.QuestionAnswer, contentDescription = "Tutoria") },
+                            label = { Text("Tutoria", fontWeight = FontWeight.Bold) }
                         )
                         NavigationBarItem(
                             selected = currentTab == "chat",
@@ -368,7 +368,7 @@ fun MainApp(
                                 currentTab = "chat"
                             },
                             icon = { Icon(Icons.Filled.Chat, contentDescription = "Chat") },
-                            label = { Text("Chat") }
+                            label = { Text("Chat", fontWeight = FontWeight.Bold) }
                         )
                         NavigationBarItem(
                             selected = currentTab == "agenda",
@@ -376,7 +376,7 @@ fun MainApp(
                                 currentTab = "agenda"
                             },
                             icon = { Icon(Icons.Filled.CalendarMonth, contentDescription = "Agenda") },
-                            label = { Text("Agenda") }
+                            label = { Text("Agenda", fontWeight = FontWeight.Bold) }
                         )
                         if (currentUserRole == "super_admin" || currentUserRole == "moderador") {
                             NavigationBarItem(
@@ -385,7 +385,7 @@ fun MainApp(
                                     currentTab = "staff_admin"
                                 },
                                 icon = { Icon(Icons.Filled.AdminPanelSettings, contentDescription = "Staff / Supabase") },
-                                label = { Text("Staff / Supabase") }
+                                label = { Text("Staff", fontWeight = FontWeight.Bold) }
                             )
                         }
                     }
@@ -462,8 +462,8 @@ fun MainApp(
                         NavigationRailItem(
                             selected = currentTab == "help_groups",
                             onClick = { currentTab = "help_groups" },
-                            icon = { Icon(Icons.Filled.QuestionAnswer, contentDescription = "Colaborar") },
-                            label = { Text("Colaborar", style = MaterialTheme.typography.labelSmall) }
+                            icon = { Icon(Icons.Filled.QuestionAnswer, contentDescription = "Tutoria") },
+                            label = { Text("Tutoria", style = MaterialTheme.typography.labelSmall) }
                         )
                         NavigationRailItem(
                             selected = currentTab == "chat",
@@ -603,12 +603,13 @@ fun MainApp(
                         )
                     }
                     "agenda" -> {
+                        val displayedRoles = remember(profiles, allRoles) { rolesListForDisplay(profiles, allRoles) }
                         AgendaScreen(
                             events = calendarEvents,
                             currentUserRole = currentUserRole,
                             auditLogs = auditLogs,
                             profiles = profiles,
-                            roles = rolesListForDisplay(profiles, allRoles),
+                            roles = displayedRoles,
                             onCreateEventTrigger = { showCreateCalendarEventDialog = true },
                             onDeleteEvent = { viewModel.deleteCalendarEvent(it) },
                             onToggleModeratorRole = { viewModel.toggleModeratorRole(it) }
@@ -1136,7 +1137,8 @@ fun MainApp(
                     }
                     Divider()
                     Spacer(modifier = Modifier.height(8.dp))
-                    if (userNotifications.isEmpty()) {
+                    val activeNotifications = userNotifications.filter { !it.read }
+                    if (activeNotifications.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -1148,15 +1150,18 @@ fun MainApp(
                         }
                     } else {
                         LazyColumn(modifier = Modifier.weight(1f)) {
-                            items(userNotifications) { notif ->
+                            items(activeNotifications) { notif ->
                                 ListItem(
+                                    modifier = Modifier.clickable {
+                                        viewModel.markNotificationAsRead(notif.id)
+                                    },
                                     headlineContent = { Text(notif.title, fontWeight = FontWeight.Bold) },
                                     supportingContent = { Text(notif.body) },
                                     leadingContent = {
                                         Icon(
                                             Icons.Filled.NotificationsActive,
                                             contentDescription = null,
-                                            tint = if (notif.read) Color.Gray else UerjBlue
+                                            tint = UerjBlue
                                         )
                                     }
                                 )
@@ -1660,6 +1665,7 @@ fun MainApp(
         )
     }
 }
+}
 
 fun getFileName(context: android.content.Context, uri: android.net.Uri): String? {
     var result: String? = null
@@ -1688,12 +1694,10 @@ fun getFileName(context: android.content.Context, uri: android.net.Uri): String?
 
 // Helpers for role displaying
 fun rolesListForDisplay(profiles: List<Profile>, roles: List<UserRole>): Map<String, String> {
-    val map = mutableMapOf<String, String>()
-    profiles.forEach { p ->
-        val ur = roles.find { it.user_id == p.id }
-        map[p.id] = ur?.role ?: "aluno"
+    val roleMap = roles.associateBy { it.user_id }
+    return profiles.associate { p ->
+        p.id to (roleMap[p.id]?.role ?: "aluno")
     }
-    return map
 }
 
 // ------------------------------------------------------------------------
@@ -1960,6 +1964,25 @@ fun GraduationCircuitLogo(modifier: Modifier = Modifier) {
 // ------------------------------------------------------------------------
 @Composable
 fun AppSplashScreen() {
+    var isVisible by remember { mutableStateOf(false) }
+    val alpha by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0f,
+        animationSpec = tween(1200),
+        label = "alpha"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0.8f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "scale"
+    )
+
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
+
     val infiniteTransition = rememberInfiniteTransition(label = "dots_anim")
     val dot1Alpha by infiniteTransition.animateFloat(
         initialValue = 0.2f,
@@ -2009,48 +2032,62 @@ fun AppSplashScreen() {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(Color(0xFF1B4AB4), Color(0xFF5CCDB7))
+                    colors = listOf(Color(0xFF1B4AB4), Color(0xFF5ED8BF))
                 )
             ),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.graphicsLayer(
+                alpha = alpha,
+                scaleX = scale,
+                scaleY = scale
+            )
         ) {
             GraduationCircuitLogo(
                 modifier = Modifier
                     .size(160.dp)
-                    .padding(bottom = 16.dp)
+                    .padding(bottom = 32.dp)
             )
 
             Text(
-                text = "Poder da Conexão",
+                text = "Poder da",
                 color = Color.White,
-                fontSize = 32.sp,
+                fontSize = 44.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
-                modifier = Modifier.padding(bottom = 36.dp)
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "Conexão",
+                color = Color.White,
+                fontSize = 44.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(bottom = 48.dp)
             )
 
-            // Dynamic bouncing three dots indicator
+            // Dynamic dots indicator
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(8.dp)
+                        .size(10.dp)
                         .background(Color.White.copy(alpha = dot1Alpha), CircleShape)
                 )
                 Box(
                     modifier = Modifier
-                        .size(8.dp)
+                        .size(10.dp)
                         .background(Color.White.copy(alpha = dot2Alpha), CircleShape)
                 )
                 Box(
                     modifier = Modifier
-                        .size(8.dp)
+                        .size(10.dp)
                         .background(Color.White.copy(alpha = dot3Alpha), CircleShape)
                 )
             }
@@ -2067,279 +2104,291 @@ fun LoginScreen(
     onGoogleLogin: (String, String, String) -> Unit
 ) {
     var showGoogleChooser by remember { mutableStateOf(false) }
-    var useManualEmail by remember { mutableStateOf(false) }
-    var manualEmail by remember { mutableStateOf("") }
-    var manualName by remember { mutableStateOf("") }
+
+    // Background animation: slow zoom
+    val infiniteTransition = rememberInfiniteTransition(label = "BackgroundZoom")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(15000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "ScaleAnimation"
+    )
 
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        // High density library context picture loaded via public Unsplash for 0KB bloat weight
+        // High density library background with subtle animation
         AsyncImage(
-            model = "https://images.unsplash.com/photo-1568667256549-094345857637?q=80&w=1200",
+            model = "https://images.unsplash.com/photo-1541339907198-e08756ebafe1?q=80&w=2070&auto=format&fit=crop",
             contentDescription = "Library Background",
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer(scaleX = scale, scaleY = scale),
             contentScale = ContentScale.Crop
         )
 
-        // Overlay with matching UerjBlue hue to exactly mimic Improved_login_screen.png tinting
+        // Blue brand overlay tint (semi-transparent)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF1B4AB4).copy(alpha = 0.85f),
-                            Color(0xFF172554).copy(alpha = 0.90f)
-                        )
-                    )
-                )
+                .background(Color(0xFF1B4AB4).copy(alpha = 0.45f))
         )
 
-        // Floating white central card
+        // Centered white elevation card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .widthIn(max = 420.dp)
-                .padding(horizontal = 24.dp),
-            shape = RoundedCornerShape(24.dp),
+                .padding(28.dp),
+            shape = RoundedCornerShape(32.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(16.dp)
+            elevation = CardDefaults.cardElevation(32.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 32.dp, horizontal = 28.dp),
+                    .padding(vertical = 48.dp, horizontal = 36.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Circular Green Graduation Cap badge in the center
+                // Circular Academic Icon in Mint/Green
                 Box(
                     modifier = Modifier
-                        .size(80.dp)
-                        .background(Color(0xFFECFDF5), CircleShape),
+                        .size(92.dp)
+                        .background(Color(0xFFD1FAE5), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Filled.School,
-                        contentDescription = "Graduation Cap Logo",
-                        tint = Color(0xFF10B981),
-                        modifier = Modifier.size(40.dp)
+                        contentDescription = "Graduation Cap",
+                        tint = Color(0xFF059669),
+                        modifier = Modifier.size(52.dp)
                     )
-                }
-
-                Spacer(modifier = Modifier.height(18.dp))
-
-                Text(
-                    text = "Poder da Conexão",
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Color(0xFF0F172A),
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Serif
-                )
-
-                Text(
-                    text = "Portal Educacional",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF64748B),
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-
-                Spacer(modifier = Modifier.height(36.dp))
-
-                // White student sign in button with border matching mockup
-                Button(
-                    onClick = { showGoogleChooser = true },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = Color(0xFF1E293B)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp)
-                        .border(1.5.dp, Color(0xFF1E293B), RoundedCornerShape(12.dp)),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        // Original Multi-colored circular "G" badge
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .background(Color(0xFFEA4335), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "G",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Text(
-                            text = "Entrar com o Google de Estudante",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            color = Color(0xFF1E293B)
-                        )
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                HorizontalDivider(color = Color(0xFFE2E8F0), thickness = 1.dp)
+                Text(
+                    text = "Poder da Conexão",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        color = Color(0xFF1A1F71), // Darker Navy
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 32.sp
+                    ),
+                    textAlign = TextAlign.Center
+                )
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Text(
+                    text = "Portal Educacional",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        color = Color(0xFF4A4A4A),
+                        fontWeight = FontWeight.Normal,
+                        letterSpacing = 0.5.sp
+                    ),
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
+                Spacer(modifier = Modifier.height(44.dp))
+
+                // Standardized Student Google Login Button with Darker Border
+                Surface(
+                    onClick = { showGoogleChooser = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.8.dp, Color(0xFF1A1F71)),
+                    color = Color.White,
+                    shadowElevation = 2.dp
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        // Google "G" Icon simulation
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(28.dp)) {
+                            // Using a box with 4 colors to simulate Google 'G' if not using resource
+                            Icon(
+                                imageVector = Icons.Filled.AccountCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF4285F4),
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Text(
+                            text = "Entrar com o Google de Estudante",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = Color.Black
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(40.dp))
 
                 Text(
                     text = "Vincule sua conta Google (Gmail/Institucional) para realizar o Onboarding de Estudante e sincronizar seus dados.",
-                    fontSize = 12.sp,
-                    color = Color(0xFF64748B),
-                    textAlign = TextAlign.Center,
-                    lineHeight = 16.sp
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        textAlign = TextAlign.Center,
+                        color = Color(0xFF6B7280),
+                        lineHeight = 20.sp,
+                        fontSize = 13.sp
+                    )
                 )
             }
         }
     }
 
-    // Google Account Picker Dialog
     if (showGoogleChooser) {
-        Dialog(onDismissRequest = { showGoogleChooser = false }) {
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp).fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Escolher uma conta",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = Color(0xFF0F172A)
-                        )
-                        IconButton(onClick = { showGoogleChooser = false }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Fechar", tint = Color.Gray)
-                        }
-                    }
+        GoogleAuthenticatedLoginDialog(
+            onAccountSelected = { email, name, avatar ->
+                showGoogleChooser = false
+                onGoogleLogin(email, name, avatar)
+            },
+            onDismiss = { showGoogleChooser = false }
+        )
+    }
+}
 
+@Composable
+fun GoogleAuthenticatedLoginDialog(
+    onAccountSelected: (String, String, String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var manualEmail by remember { mutableStateOf("") }
+    var manualName by remember { mutableStateOf("") }
+    var useManualEmail by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = "para prosseguir no app Poder da Conexão",
-                        fontSize = 12.sp,
-                        color = Color(0xFF64748B),
-                        modifier = Modifier.align(Alignment.Start).padding(bottom = 16.dp)
+                        text = "Escolher uma conta",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color(0xFF0F172A)
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Filled.Close, contentDescription = "Fechar", tint = Color.Gray)
+                    }
+                }
+
+                Text(
+                    text = "para prosseguir no app Poder da Conexão",
+                    fontSize = 12.sp,
+                    color = Color(0xFF64748B),
+                    modifier = Modifier.align(Alignment.Start).padding(bottom = 16.dp)
+                )
+
+                if (!useManualEmail) {
+                    val accounts = listOf(
+                        Triple("jefersonribeiro199026@gmail.com", "Jeferson Ribeiro", "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200&h=200&auto=format&fit=crop")
                     )
 
-                    if (!useManualEmail) {
-                        // Preloaded UERJ accounts list
-                        val accounts = listOf(
-                            Triple("jefersonribeiro199026@gmail.com", "Jeferson Ribeiro", "avatar_jeferson"),
-                            Triple("mariasilva@uerj.br", "Maria Silva", "avatar_maria"),
-                            Triple("pedrogomes@uerj.br", "Pedro Gomes", "avatar_pedro")
-                        )
-
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            accounts.forEach { (email, name, photo) ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            onGoogleLogin(email, name, photo)
-                                            showGoogleChooser = false
-                                        }
-                                        .padding(vertical = 10.dp, horizontal = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        accounts.forEach { (email, name, photo) ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onAccountSelected(email, name, photo) }
+                                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (photo.startsWith("http")) {
+                                    AsyncImage(
+                                        model = photo,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(40.dp).clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
                                     Box(
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .background(Color(0xFFEFF6FF), CircleShape),
+                                        modifier = Modifier.size(40.dp).background(Color(0xFFEFF6FF), CircleShape),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(name.take(1), fontWeight = FontWeight.Bold, color = Color(0xFF1B4AB4))
                                     }
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF0F172A))
-                                        Text(email, fontSize = 12.sp, color = Color(0xFF64748B), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    }
                                 }
-                                HorizontalDivider(color = Color(0xFFF1F5F9))
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(name, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF0F172A))
+                                    Text(email, fontSize = 12.sp, color = Color(0xFF64748B), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
                             }
+                            HorizontalDivider(color = Color(0xFFF1F5F9))
                         }
+                    }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                        TextButton(
-                            onClick = { useManualEmail = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF1B4AB4))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Usar outra conta do Google", color = Color(0xFF1B4AB4), fontWeight = FontWeight.Bold)
+                    TextButton(
+                        onClick = { useManualEmail = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Filled.GroupAdd, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF1B4AB4))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Vincular Outro Google", color = Color(0xFF1B4AB4), fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    OutlinedTextField(
+                        value = manualEmail,
+                        onValueChange = { manualEmail = it },
+                        label = { Text("E-mail do Google (Gmail/Uerj)") },
+                        leadingIcon = { Icon(Icons.Filled.Email, contentDescription = null, tint = Color.Gray) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = manualName,
+                        onValueChange = { manualName = it },
+                        label = { Text("Nome Completo") },
+                        leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null, tint = Color.Gray) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { useManualEmail = false }) {
+                            Text("Voltar", color = Color(0xFF64748B))
                         }
-                    } else {
-                        // Manual Google Account creation form
-                        OutlinedTextField(
-                            value = manualEmail,
-                            onValueChange = { manualEmail = it },
-                            label = { Text("E-mail do Google (Gmail/Uerj)") },
-                            leadingIcon = { Icon(Icons.Filled.Email, contentDescription = null, tint = Color.Gray) },
-                            modifier = Modifier.fillMaxWidth(),
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                if (manualEmail.isNotEmpty() && manualEmail.contains("@")) {
+                                    onAccountSelected(manualEmail, manualName, "avatar_user_default")
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B4AB4)),
                             shape = RoundedCornerShape(10.dp)
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        OutlinedTextField(
-                            value = manualName,
-                            onValueChange = { manualName = it },
-                            label = { Text("Nome Completo") },
-                            leadingIcon = { Icon(Icons.Filled.Person, contentDescription = null, tint = Color.Gray) },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            TextButton(onClick = { useManualEmail = false }) {
-                                Text("Voltar", color = Color(0xFF64748B))
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = {
-                                    if (manualEmail.isNotEmpty() && manualEmail.contains("@")) {
-                                        onGoogleLogin(manualEmail, manualName, "avatar_user_default")
-                                        showGoogleChooser = false
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1B4AB4)),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Text("Vincular Google", fontWeight = FontWeight.Bold)
-                            }
+                            Text("Vincular Google", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -2414,289 +2463,6 @@ fun StaffAdminPanelScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (currentUserRole == "super_admin") {
-                    // Supabase Settings Card
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(
-                                        imageVector = if (isConfigured) Icons.Filled.CloudDone else Icons.Filled.Cloud,
-                                        contentDescription = "Supabase Cloud",
-                                        tint = if (isConfigured) UerjGreen else Color.Gray,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Text(
-                                        text = "Integração Supabase Live Sync",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = UerjBlue
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                Text(
-                                    text = "Vincule diretamente seu banco de dados Supabase preenchendo a URL e chave Anon padrão. Todos os perfis e moderadores criados serão postados em tempo real.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                                )
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                OutlinedTextField(
-                                    value = sUrl,
-                                    onValueChange = { sUrl = it },
-                                    label = { Text("Supabase Project URL") },
-                                    placeholder = { Text("https://xxxx.supabase.co") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
-                                )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                OutlinedTextField(
-                                    value = sKey,
-                                    onValueChange = { sKey = it },
-                                    label = { Text("Supabase Service / Anon Key") },
-                                    placeholder = { Text("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true
-                                )
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Button(
-                                        onClick = {
-                                            SupabaseSync.saveConfig(context, sUrl, sKey)
-                                            Toast.makeText(context, "Configurações do Supabase Salvas!", Toast.LENGTH_SHORT).show()
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = UerjBlue),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text("Salvar Credenciais", fontWeight = FontWeight.SemiBold)
-                                    }
-
-                                    if (isConfigured) {
-                                        Button(
-                                            onClick = {
-                                                isSyncingAll = true
-                                                val syncedCount = profiles.size
-                                                var completes = 0
-                                                profiles.forEach { p ->
-                                                    val ur = allRoles.find { it.user_id == p.id }
-                                                    SupabaseSync.syncProfile(context, p) { sProf, _ ->
-                                                        coroutineScope.launch {
-                                                            if (ur != null) {
-                                                                SupabaseSync.syncRole(context, ur.user_id, ur.role, ur.permissions, ur.principal_area) { sRol, _ ->
-                                                                    coroutineScope.launch {
-                                                                        completes++
-                                                                        if (completes >= syncedCount) {
-                                                                            isSyncingAll = false
-                                                                        }
-                                                                    }
-                                                                }
-                                                            } else {
-                                                                completes++
-                                                                if (completes >= syncedCount) {
-                                                                    isSyncingAll = false
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                                Toast.makeText(context, "Sincronizando $syncedCount contas no Supabase...", Toast.LENGTH_LONG).show()
-                                            },
-                                            colors = ButtonDefaults.buttonColors(containerColor = UerjGreen),
-                                            enabled = !isSyncingAll
-                                        ) {
-                                            if (isSyncingAll) {
-                                                CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
-                                            } else {
-                                                Text("Sincronizar Tudo")
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                // Status pill indicator
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(
-                                            if (isConfigured) Color(0xFFDCFCE7) else Color(0xFFF3F4F6),
-                                            RoundedCornerShape(8.dp)
-                                        )
-                                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .background(if (isConfigured) Color(0xFF22C55E) else Color(0xFF6B7280), CircleShape)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = if (isConfigured) "Supabase Online & Monitorando (URL: $sUrl)" else "Modo de Sincronização Local Habilitado",
-                                            color = if (isConfigured) Color(0xFF15803D) else Color(0xFF374151),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Supabase Schema Copy Card
-                    item {
-                        var showSqlPreview by remember { mutableStateOf(false) }
-                        val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
-
-                        Card(
-                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.15f)),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Storage,
-                                        contentDescription = "Banco de Dados",
-                                        tint = UerjBlue,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Text(
-                                        text = "Criar Tabelas no Supabase",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = UerjBlue
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(
-                                    text = "As tabelas relacionais são necessárias para o live sync da UERJ com a nuvem funcionar. Copie o script SQL pré-configurado abaixo e cole diretamente na ferramenta de banco de dados do Supabase.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f)
-                                )
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Button(
-                                        onClick = {
-                                            clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(SupabaseSync.DATABASE_SCHEMA_SQL))
-                                            Toast.makeText(context, "Script SQL copiado para transferência!", Toast.LENGTH_SHORT).show()
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = UerjBlue),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Icon(Icons.Filled.ContentCopy, contentDescription = "Copiar", modifier = Modifier.size(16.dp))
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Copiar SQL", fontWeight = FontWeight.SemiBold)
-                                    }
-
-                                    OutlinedButton(
-                                        onClick = { showSqlPreview = !showSqlPreview },
-                                        border = BorderStroke(1.dp, UerjBlue),
-                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = UerjBlue)
-                                    ) {
-                                        Text(if (showSqlPreview) "Esconder SQL" else "Ver Código")
-                                    }
-                                }
-
-                                if (showSqlPreview) {
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Card(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(8.dp),
-                                        colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.05f))
-                                    ) {
-                                        Box(modifier = Modifier.padding(12.dp)) {
-                                            Text(
-                                                text = SupabaseSync.DATABASE_SCHEMA_SQL,
-                                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
-                                                color = Slate800,
-                                                maxLines = 15,
-                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(16.dp))
-                                HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.08f))
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Info,
-                                        contentDescription = "Instruções",
-                                        tint = UerjGreen,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Text(
-                                        text = "Instruções de Inicialização Integrada:",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Slate800
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                val steps = listOf(
-                                    "1. Acesse o painel do seu projeto no Supabase (https://supabase.com).",
-                                    "2. No menu lateral esquerdo, clique no item \"SQL Editor\" (ícone com símbolo de terminal/grade).",
-                                    "3. Clique no botão \"New Query\" (Nova Consulta) no centro para abrir uma aba em branco.",
-                                    "4. Cole todo o Script SQL copiado clicando no botão acima.",
-                                    "5. Clique em \"Run\" (ou aperte Cmd+Enter / Ctrl+Enter) para executar. Todas as 17 tabelas serão criadas de forma nativa e robusta.",
-                                    "6. No menu lateral esquerdo, vá em \"Storage\" (Mídias) e crie dois buckets públicos inovadores chamados \"mindmaps\" e \"materials\". Ative o acesso público (Public access) para exibir e salvar as mídias carregadas com sucesso!"
-                                )
-
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    steps.forEach { step ->
-                                        Text(
-                                            text = step,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = Slate600,
-                                            modifier = Modifier.padding(start = 4.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
                 // Team management Section
                 item {
                     Text(
@@ -2963,99 +2729,9 @@ fun StaffAdminPanelScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Horizontal scrolling chip row for tabling selector
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    val tables = listOf(
-                        Pair("profiles", "👤 Perfis"),
-                        Pair("posts", "📝 Postagens"),
-                        Pair("subjects", "📚 Disciplinas"),
-                        Pair("mindmaps", "🧠 Mapas Mentais"),
-                        Pair("help_requests", "🤝 Pedidos Ajuda"),
-                        Pair("study_groups", "👥 Grupos Estudo"),
-                        Pair("calendar_events", "📅 Agenda"),
-                        Pair("study_materials", "📑 Materiais")
-                    )
+                // Entity selection and management header elements removed per request
 
-                    items(tables) { (tableCode, tableName) ->
-                        FilterChip(
-                            selected = selectedTable == tableCode,
-                            onClick = { 
-                                selectedTable = tableCode
-                                queryText = "" 
-                            },
-                            label = { Text(tableName, fontWeight = FontWeight.Bold) }
-                        )
-                    }
-                }
-
-                // Table Status & Add Button Header
-                val recordCount = when(selectedTable) {
-                    "profiles" -> profiles.size
-                    "posts" -> posts.size
-                    "subjects" -> subjects.size
-                    "mindmaps" -> mindmaps.size
-                    "help_requests" -> helpRequests.size
-                    "study_groups" -> studyGroups.size
-                    "calendar_events" -> calendarEvents.size
-                    "study_materials" -> studyMaterials.size
-                    else -> 0
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Tabela: ${selectedTable.uppercase()}",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Black,
-                            color = Slate800
-                        )
-                        Text(
-                            text = "$recordCount registros cadastrados",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
-                        )
-                    }
-
-                    Button(
-                        onClick = {
-                            when(selectedTable) {
-                                "profiles" -> activeProfileDialog = Profile("", "", "", "", "", "", "")
-                                "posts" -> activePostDialog = Post(0, "system_admin", "Admin", "avatar_user_default", null, "", null)
-                                "subjects" -> activeSubjectDialog = Subject(0, "", "")
-                                "mindmaps" -> activeMindmapDialog = Mindmap(0, "", "", "", "system_admin", "Admin", "")
-                                "help_requests" -> activeHelpRequestDialog = HelpRequest(0, "", "", 1, "system_admin", "Admin", false)
-                                "study_groups" -> activeStudyGroupDialog = StudyGroup(0, "", "", "system_admin")
-                                "calendar_events" -> activeCalendarEventDialog = CalendarEvent(0, "", "", System.currentTimeMillis(), "evento", "system_admin")
-                                "study_materials" -> activeStudyMaterialDialog = StudyMaterial(0, "", "", "", "material", "system_admin", "Admin")
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = UerjBlue),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Icon(Icons.Filled.Add, contentDescription = "Add", modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Criar", fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                // Filtering block
-                OutlinedTextField(
-                    value = queryText,
-                    onValueChange = { queryText = it },
-                    placeholder = { Text("Pesquisar nesta tabela...", fontSize = 14.sp) },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.Gray) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(10.dp)
-                )
+                // Filter bar removed per request
 
                 // List of Records based on Selected Entity Table
                 LazyColumn(
@@ -4851,7 +4527,7 @@ fun MindmapScreen(
 }
 
 // ------------------------------------------------------------------------
-// SCREEN / HUB: Help Desk & Study Groups (Colaborar)
+// SCREEN / HUB: Help Desk & Study Groups (Tutoria)
 // ------------------------------------------------------------------------
 @Composable
 fun HelpAndGroupsHub(
@@ -4953,110 +4629,151 @@ fun HelpAndGroupsHub(
                 // --------------------------------------------------------------------
                 // LIVE TUTORING CARD (JITSI INFRAME) - Accessible to Period & Subject Staff
                 // --------------------------------------------------------------------
-                val isStaffUser = currentUserRole == "moderador" || currentUserRole == "super_admin"
-                
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
-                    ),
-                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Filled.VideoCall,
-                                    contentDescription = "Live Tutoria",
-                                    tint = UerjBlue,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    "Monitoria Online ao Vivo (Jitsi Framework)",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = UerjBlue
-                                )
-                            }
-                            
-                            Box(
-                                modifier = Modifier
-                                    .background(UerjGreen.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                if (currentUserId == "jefersonribeiro199026@gmail.com") {
+                    val isStaffUser = currentUserRole == "moderador" || currentUserRole == "super_admin"
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+                        ),
+                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Filled.VideoCall,
+                                        contentDescription = "Live Tutoria",
+                                        tint = UerjBlue,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "Monitoria Online ao Vivo (Jitsi Framework)",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = UerjBlue
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .background(UerjGreen.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        "EM APP",
+                                        color = UerjGreen,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            if (isStaffUser) {
+                                // Staff tutoring manager controls
                                 Text(
-                                    "EM APP",
-                                    color = UerjGreen,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Black
+                                    text = "Preste tutoria ao vivo para as salas do seu período (${currentUserProfile?.periodo ?: "Geral"}). Escolha a matéria para iniciar a transmissão:",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                            }
-                        }
-                        
-                        Spacer(modifier = Modifier.height(6.dp))
-                        
-                        if (isStaffUser) {
-                            // Staff tutoring manager controls
-                            Text(
-                                text = "Preste tutoria ao vivo para as salas do seu período (${currentUserProfile?.periodo ?: "Geral"}). Escolha a matéria para iniciar a transmissão:",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            
-                            var selectedSubjectForTutoria by remember { mutableStateOf(subjects.firstOrNull()) }
-                            var showSubjectDropdown by remember { mutableStateOf(false) }
-                            
-                            Box(modifier = Modifier.fillMaxWidth()) {
-                                OutlinedButton(
-                                    onClick = { showSubjectDropdown = true },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                var selectedSubjectForTutoria by remember { mutableStateOf(subjects.firstOrNull()) }
+                                var showSubjectDropdown by remember { mutableStateOf(false) }
+
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    OutlinedButton(
+                                        onClick = { showSubjectDropdown = true },
+                                        modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text(
-                                            text = selectedSubjectForTutoria?.title ?: "Selecionar Disciplina",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Icon(Icons.Filled.ArrowDropDown, contentDescription = "Expandir")
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = selectedSubjectForTutoria?.title ?: "Selecionar Disciplina",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Icon(Icons.Filled.ArrowDropDown, contentDescription = "Expandir")
+                                        }
+                                    }
+
+                                    DropdownMenu(
+                                        expanded = showSubjectDropdown,
+                                        onDismissRequest = { showSubjectDropdown = false },
+                                        modifier = Modifier.fillMaxWidth(0.9f)
+                                    ) {
+                                        subjects.forEach { sub ->
+                                            DropdownMenuItem(
+                                                text = { Text(sub.title, style = MaterialTheme.typography.bodyMedium) },
+                                                onClick = {
+                                                    selectedSubjectForTutoria = sub
+                                                    showSubjectDropdown = false
+                                                }
+                                            )
+                                        }
                                     }
                                 }
-                                
-                                DropdownMenu(
-                                    expanded = showSubjectDropdown,
-                                    onDismissRequest = { showSubjectDropdown = false },
-                                    modifier = Modifier.fillMaxWidth(0.9f)
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Button(
+                                    onClick = {
+                                        val currentSubject = selectedSubjectForTutoria ?: subjects.firstOrNull()
+                                        if (currentSubject != null) {
+                                            val safeSub = currentSubject.title
+                                                .replace(" ", "")
+                                                .replace("ã", "a")
+                                                .replace("é", "e")
+                                                .replace("á", "a")
+                                                .replace("õ", "o")
+                                                .replace("í", "i")
+                                                .replace("ç", "c")
+                                            val safePeriod = (currentUserProfile?.periodo ?: "Geral")
+                                                .replace(" ", "")
+                                                .replace("º", "")
+                                                .replace("ª", "")
+                                            val jitsiRoomName = "Uerj_Tutoria_${safeSub}_${safePeriod}"
+                                            val title = "Monitoria: ${currentSubject.title} [${currentUserProfile?.periodo ?: "Semestre"}]"
+                                            onJoinVideoTutoria(jitsiRoomName, title)
+                                        } else {
+                                            Toast.makeText(context, "Nenhuma disciplina disponível.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = UerjBlue)
                                 ) {
-                                    subjects.forEach { sub ->
-                                        DropdownMenuItem(
-                                            text = { Text(sub.title, style = MaterialTheme.typography.bodyMedium) },
-                                            onClick = {
-                                                selectedSubjectForTutoria = sub
-                                                showSubjectDropdown = false
-                                            }
-                                        )
-                                    }
+                                    Icon(Icons.Filled.VideoCameraFront, contentDescription = "Join")
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Abrir Sala de Atendimento (Tutor)")
                                 }
-                            }
-                            
-                            Spacer(modifier = Modifier.height(10.dp))
-                            
-                            Button(
-                                onClick = {
-                                    val currentSubject = selectedSubjectForTutoria ?: subjects.firstOrNull()
-                                    if (currentSubject != null) {
-                                        val safeSub = currentSubject.title
+                            } else {
+                                // Student view - direct in-app access to assigned tutor room
+                                val studentPeriodo = currentUserProfile?.periodo ?: "1º Período"
+                                val studentMateria = currentUserProfile?.selected_materia ?: getDefaultSubjectForCourse(currentUserProfile?.curso ?: "Lic. Pedagogia/UERJ", studentPeriodo)
+
+                                Text(
+                                    text = "Tutoria disponível para você em $studentMateria [$studentPeriodo]. Clique abaixo para entrar no Plantão de Dúvidas ao vivo com seu tutor e tirar dúvidas no modelo inframe integrado.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Button(
+                                    onClick = {
+                                        val safeSub = studentMateria
                                             .replace(" ", "")
                                             .replace("ã", "a")
                                             .replace("é", "e")
@@ -5064,60 +4781,21 @@ fun HelpAndGroupsHub(
                                             .replace("õ", "o")
                                             .replace("í", "i")
                                             .replace("ç", "c")
-                                        val safePeriod = (currentUserProfile?.periodo ?: "Geral")
+                                        val safePeriod = studentPeriodo
                                             .replace(" ", "")
                                             .replace("º", "")
                                             .replace("ª", "")
                                         val jitsiRoomName = "Uerj_Tutoria_${safeSub}_${safePeriod}"
-                                        val title = "Monitoria: ${currentSubject.title} [${currentUserProfile?.periodo ?: "Semestre"}]"
+                                        val title = "Sessão de Tutoria: $studentMateria [$studentPeriodo]"
                                         onJoinVideoTutoria(jitsiRoomName, title)
-                                    } else {
-                                        Toast.makeText(context, "Nenhuma disciplina disponível.", Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = UerjBlue)
-                            ) {
-                                Icon(Icons.Filled.VideoCameraFront, contentDescription = "Join")
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Abrir Sala de Atendimento (Tutor)")
-                            }
-                        } else {
-                            // Student view - direct in-app access to assigned tutor room
-                            val studentPeriodo = currentUserProfile?.periodo ?: "1º Período"
-                            val studentMateria = currentUserProfile?.selected_materia ?: getDefaultSubjectForCourse(currentUserProfile?.curso ?: "Lic. Pedagogia/UERJ", studentPeriodo)
-                            
-                            Text(
-                                text = "Tutoria disponível para você em $studentMateria [$studentPeriodo]. Clique abaixo para entrar no Plantão de Dúvidas ao vivo com seu tutor e tirar dúvidas no modelo inframe integrado.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            
-                            Button(
-                                onClick = {
-                                    val safeSub = studentMateria
-                                        .replace(" ", "")
-                                        .replace("ã", "a")
-                                        .replace("é", "e")
-                                        .replace("á", "a")
-                                        .replace("õ", "o")
-                                        .replace("í", "i")
-                                        .replace("ç", "c")
-                                    val safePeriod = studentPeriodo
-                                        .replace(" ", "")
-                                        .replace("º", "")
-                                        .replace("ª", "")
-                                    val jitsiRoomName = "Uerj_Tutoria_${safeSub}_${safePeriod}"
-                                    val title = "Sessão de Tutoria: $studentMateria [$studentPeriodo]"
-                                    onJoinVideoTutoria(jitsiRoomName, title)
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = UerjGreen)
-                            ) {
-                                Icon(Icons.Filled.VideoCameraFront, contentDescription = "Join")
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Entrar na Reunião de Tutoria")
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = UerjGreen)
+                                ) {
+                                    Icon(Icons.Filled.VideoCameraFront, contentDescription = "Join")
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Entrar na Reunião de Tutoria")
+                                }
                             }
                         }
                     }
@@ -5818,14 +5496,11 @@ fun AgendaScreen(
 ) {
     var coreAgendaSubTab by remember { mutableStateOf("agenda") } // agenda, logs, papeis
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val isWide = maxWidth >= 840.dp
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .then(if (isWide) Modifier.widthIn(max = 840.dp).align(Alignment.TopCenter) else Modifier)
-        ) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         if (currentUserRole == "super_admin") {
             // Tab switch exclusive to Super Admins
             TabRow(
@@ -6003,7 +5678,6 @@ fun AgendaScreen(
                 }
             }
         }
-    }
     }
 }
 

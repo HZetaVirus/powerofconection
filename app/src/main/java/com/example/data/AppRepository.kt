@@ -78,6 +78,7 @@ class AppRepository(private val dao: AppDao) {
     fun getNotificationsForUser(userId: String): Flow<List<Notification>> = dao.getNotificationsForUser(userId)
     suspend fun insertNotification(notif: Notification) = dao.insertNotification(notif)
     suspend fun markAllNotificationsAsRead(userId: String) = dao.markAllNotificationsAsRead(userId)
+    suspend fun markNotificationAsRead(id: Int) = dao.markNotificationAsRead(id)
 
     // Study Groups
     fun getAllStudyGroups(): Flow<List<StudyGroup>> = dao.getAllStudyGroups()

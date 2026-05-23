@@ -100,6 +100,10 @@ dependencies {
   implementation(libs.okhttp)
   // implementation(libs.play.services.location)
   implementation(libs.retrofit)
+
+  // Microsoft App Center (Requested)
+  implementation(libs.appcenter.analytics)
+  implementation(libs.appcenter.crashes)
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)

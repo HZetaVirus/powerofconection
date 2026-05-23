@@ -15,6 +15,9 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertProfile(profile: Profile)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertProfiles(profiles: List<Profile>)
+
     @Update
     suspend fun updateProfile(profile: Profile)
 
@@ -28,6 +31,9 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRole(role: UserRole)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertRoles(roles: List<UserRole>)
+
     @Query("DELETE FROM roles WHERE user_id = :userId")
     suspend fun deleteRole(userId: String)
 
@@ -40,6 +46,9 @@ interface AppDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPost(post: Post)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPosts(posts: List<Post>)
 
     @Query("DELETE FROM posts WHERE id = :postId")
     suspend fun deletePostById(postId: Int)
@@ -77,12 +86,18 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSubject(subject: Subject)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSubjects(subjects: List<Subject>)
+
     // Mindmaps
     @Query("SELECT * FROM mindmaps ORDER BY created_at DESC")
     fun getAllMindmaps(): Flow<List<Mindmap>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMindmap(mindmap: Mindmap)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMindmaps(mindmaps: List<Mindmap>)
 
     // Mindmap Favorites
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -101,6 +116,9 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHelpRequest(req: HelpRequest)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertHelpRequests(reqs: List<HelpRequest>)
+
     @Query("UPDATE help_requests SET is_resolved = :resolved WHERE id = :id")
     suspend fun updateHelpRequestStatus(id: Int, resolved: Boolean)
 
@@ -110,6 +128,9 @@ interface AppDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMessage(msg: Message)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMessages(msgs: List<Message>)
 
     // Notifications
     @Query("SELECT * FROM notifications WHERE user_id = :userId ORDER BY created_at DESC")
@@ -121,12 +142,18 @@ interface AppDao {
     @Query("UPDATE notifications SET read = 1 WHERE user_id = :userId")
     suspend fun markAllNotificationsAsRead(userId: String)
 
+    @Query("UPDATE notifications SET read = 1 WHERE id = :id")
+    suspend fun markNotificationAsRead(id: Int)
+
     // Study Groups
     @Query("SELECT * FROM study_groups ORDER BY created_at DESC")
     fun getAllStudyGroups(): Flow<List<StudyGroup>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertStudyGroup(group: StudyGroup)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertStudyGroups(groups: List<StudyGroup>)
 
     // Group Threads
     @Query("SELECT * FROM group_threads WHERE group_id = :groupId ORDER BY created_at DESC")

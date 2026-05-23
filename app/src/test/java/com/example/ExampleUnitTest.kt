@@ -150,7 +150,7 @@ class ExampleUnitTest {
     g.fill(Ellipse2D.Float(246f, 379f + offsetY, 20f, 20f))
     g.fill(Ellipse2D.Float(369f, 360f + offsetY, 20f, 20f))
     
-    // Draw text: "Power Connection" at the bottom
+    // Draw text: "Poder da Conexão" at the bottom
     g.color = Color.WHITE
     g.font = Font("SansSerif", Font.PLAIN, 32)
     val fm1 = g.fontMetrics

@@ -44,6 +44,19 @@ object SupabaseSync {
         return if (saved.isBlank()) DEFAULT_KEY else saved
     }
 
+    private fun <T> parseArray(jsonStr: String, transformer: (JSONObject) -> T): List<T> {
+        val list = mutableListOf<T>()
+        try {
+            val arr = JSONArray(jsonStr)
+            for (i in 0 until arr.length()) {
+                list.add(transformer(arr.getJSONObject(i)))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro no parsing do array JSON: ${e.message}")
+        }
+        return list
+    }
+
     fun saveConfig(context: Context, url: String, key: String) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
@@ -423,92 +436,64 @@ object SupabaseSync {
         Log.d(TAG, "Iniciando sincronização de Supabase para Room...")
 
         // 1. Profiles
-        getFromSupabaseSync(context, "profiles")?.let { jsonStr ->
-            try {
-                val arr = JSONArray(jsonStr)
-                for (i in 0 until arr.length()) {
-                    val op = arr.getJSONObject(i)
-                    dao.insertProfile(
-                        Profile(
-                            id = op.getString("id"),
-                            nome = op.getString("nome"),
-                            curso = op.optString("curso", "Pedagogia (UERJ)"),
-                            periodo = op.optString("periodo", "1º Período"),
-                            bio = op.optString("bio", ""),
-                            foto_url = op.optString("foto_url", "avatar_user_default"),
-                            selected_materia = op.optString("selected_materia", ""),
-                            created_at = op.optLong("created_at", System.currentTimeMillis())
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Erro ao processar profiles: ${e.message}")
+        getFromSupabaseSync(context, "profiles")?.let { json ->
+            val list = parseArray(json) { op ->
+                Profile(
+                    id = op.getString("id"),
+                    nome = op.getString("nome"),
+                    curso = op.optString("curso", "Pedagogia (UERJ)"),
+                    periodo = op.optString("periodo", "1º Período"),
+                    bio = op.optString("bio", ""),
+                    foto_url = op.optString("foto_url", "avatar_user_default"),
+                    selected_materia = op.optString("selected_materia", ""),
+                    created_at = op.optLong("created_at", System.currentTimeMillis())
+                )
             }
+            if (list.isNotEmpty()) dao.insertProfiles(list)
         }
 
         // 2. Roles
-        getFromSupabaseSync(context, "roles")?.let { jsonStr ->
-            try {
-                val arr = JSONArray(jsonStr)
-                for (i in 0 until arr.length()) {
-                    val op = arr.getJSONObject(i)
-                    dao.insertRole(
-                        UserRole(
-                            user_id = op.getString("user_id"),
-                            role = op.optString("role", "aluno"),
-                            permissions = op.optString("permissions", "delete_posts,manage_events,moderate_chats"),
-                            principal_area = op.optString("principal_area", "Pedagogia (UERJ)"),
-                            online = op.optBoolean("online", false)
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Erro ao processar roles: ${e.message}")
+        getFromSupabaseSync(context, "roles")?.let { json ->
+            val list = parseArray(json) { op ->
+                UserRole(
+                    user_id = op.getString("user_id"),
+                    role = op.optString("role", "aluno"),
+                    permissions = op.optString("permissions", "delete_posts,manage_events,moderate_chats"),
+                    principal_area = op.optString("principal_area", "Pedagogia (UERJ)"),
+                    online = op.optBoolean("online", false)
+                )
             }
+            if (list.isNotEmpty()) dao.insertRoles(list)
         }
 
         // 3. Subjects
-        getFromSupabaseSync(context, "subjects")?.let { jsonStr ->
-            try {
-                val arr = JSONArray(jsonStr)
-                for (i in 0 until arr.length()) {
-                    val op = arr.getJSONObject(i)
-                    dao.insertSubject(
-                        Subject(
-                            id = op.getInt("id"),
-                            title = op.getString("title"),
-                            description = op.optString("description", "")
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Erro ao processar subjects: ${e.message}")
+        getFromSupabaseSync(context, "subjects")?.let { json ->
+            val list = parseArray(json) { op ->
+                Subject(
+                    id = op.getInt("id"),
+                    title = op.getString("title"),
+                    description = op.optString("description", "")
+                )
             }
+            if (list.isNotEmpty()) dao.insertSubjects(list)
         }
 
         // 4. Posts
-        getFromSupabaseSync(context, "posts")?.let { jsonStr ->
-            try {
-                val arr = JSONArray(jsonStr)
-                for (i in 0 until arr.length()) {
-                    val op = arr.getJSONObject(i)
-                    dao.insertPost(
-                        Post(
-                            id = op.getInt("id"),
-                            author_id = op.getString("author_id"),
-                            author_name = op.getString("author_name"),
-                            author_avatar = op.optString("author_avatar", "avatar_user_default"),
-                            subject_id = if (op.isNull("subject_id")) null else op.getInt("subject_id"),
-                            content = op.getString("content"),
-                            media_url = if (op.isNull("media_url")) null else op.getString("media_url"),
-                            created_at = op.optLong("created_at", System.currentTimeMillis()),
-                            likes_count = op.optInt("likes_count", 0)
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Erro ao processar posts: ${e.message}")
+        getFromSupabaseSync(context, "posts")?.let { json ->
+            val list = parseArray(json) { op ->
+                Post(
+                    id = op.getInt("id"),
+                    author_id = op.getString("author_id"),
+                    author_name = op.getString("author_name"),
+                    author_avatar = op.optString("author_avatar", "avatar_user_default"),
+                    subject_id = if (op.isNull("subject_id")) null else op.getInt("subject_id"),
+                    content = op.getString("content"),
+                    media_url = if (op.isNull("media_url")) null else op.getString("media_url"),
+                    created_at = op.optLong("created_at", System.currentTimeMillis()),
+                    likes_count = op.optInt("likes_count", 0)
+                )
             }
+            if (list.isNotEmpty()) dao.insertPosts(list)
         }
 
         // 5. Comments
@@ -535,75 +520,54 @@ object SupabaseSync {
         }
 
         // 6. Mindmaps
-        getFromSupabaseSync(context, "mindmaps")?.let { jsonStr ->
-            try {
-                val arr = JSONArray(jsonStr)
-                for (i in 0 until arr.length()) {
-                    val op = arr.getJSONObject(i)
-                    dao.insertMindmap(
-                        Mindmap(
-                            id = op.getInt("id"),
-                            title = op.getString("title"),
-                            description = op.optString("description", ""),
-                            image_url = op.getString("image_url"),
-                            author_id = op.getString("author_id"),
-                            author_name = op.getString("author_name"),
-                            tags = op.optString("tags", ""),
-                            created_at = op.optLong("created_at", System.currentTimeMillis())
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Erro ao processar mindmaps: ${e.message}")
+        getFromSupabaseSync(context, "mindmaps")?.let { json ->
+            val list = parseArray(json) { op ->
+                Mindmap(
+                    id = op.getInt("id"),
+                    title = op.getString("title"),
+                    description = op.optString("description", ""),
+                    image_url = op.getString("image_url"),
+                    author_id = op.getString("author_id"),
+                    author_name = op.getString("author_name"),
+                    tags = op.optString("tags", ""),
+                    created_at = op.optLong("created_at", System.currentTimeMillis())
+                )
             }
+            if (list.isNotEmpty()) dao.insertMindmaps(list)
         }
 
         // 7. Help Requests
-        getFromSupabaseSync(context, "help_requests")?.let { jsonStr ->
-            try {
-                val arr = JSONArray(jsonStr)
-                for (i in 0 until arr.length()) {
-                    val op = arr.getJSONObject(i)
-                    dao.insertHelpRequest(
-                        HelpRequest(
-                            id = op.getInt("id"),
-                            title = op.getString("title"),
-                            description = op.getString("description"),
-                            subject_id = op.getInt("subject_id"),
-                            author_id = op.getString("author_id"),
-                            author_name = op.getString("author_name"),
-                            is_resolved = op.optBoolean("is_resolved", false),
-                            created_at = op.optLong("created_at", System.currentTimeMillis())
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Erro ao processar help_requests: ${e.message}")
+        getFromSupabaseSync(context, "help_requests")?.let { json ->
+            val list = parseArray(json) { op ->
+                HelpRequest(
+                    id = op.getInt("id"),
+                    title = op.getString("title"),
+                    description = op.getString("description"),
+                    subject_id = op.getInt("subject_id"),
+                    author_id = op.getString("author_id"),
+                    author_name = op.getString("author_name"),
+                    is_resolved = op.optBoolean("is_resolved", false),
+                    created_at = op.optLong("created_at", System.currentTimeMillis())
+                )
             }
+            if (list.isNotEmpty()) dao.insertHelpRequests(list)
         }
 
         // 8. Messages
-        getFromSupabaseSync(context, "messages")?.let { jsonStr ->
-            try {
-                val arr = JSONArray(jsonStr)
-                for (i in 0 until arr.length()) {
-                    val op = arr.getJSONObject(i)
-                    dao.insertMessage(
-                        Message(
-                            id = op.getInt("id"),
-                            content = op.getString("content"),
-                            media_url = if (op.isNull("media_url")) null else op.getString("media_url"),
-                            author_id = op.getString("author_id"),
-                            author_name = op.getString("author_name"),
-                            author_role = op.optString("author_role", "aluno"),
-                            room_tag = if (op.isNull("room_tag")) null else op.getString("room_tag"),
-                            created_at = op.optLong("created_at", System.currentTimeMillis())
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Erro ao processar messages: ${e.message}")
+        getFromSupabaseSync(context, "messages")?.let { json ->
+            val list = parseArray(json) { op ->
+                Message(
+                    id = op.getInt("id"),
+                    content = op.getString("content"),
+                    media_url = if (op.isNull("media_url")) null else op.getString("media_url"),
+                    author_id = op.getString("author_id"),
+                    author_name = op.getString("author_name"),
+                    author_role = op.optString("author_role", "aluno"),
+                    room_tag = if (op.isNull("room_tag")) null else op.getString("room_tag"),
+                    created_at = op.optLong("created_at", System.currentTimeMillis())
+                )
             }
+            if (list.isNotEmpty()) dao.insertMessages(list)
         }
 
         // 9. Notifications

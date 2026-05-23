@@ -20,15 +20,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = AppRepository(database.dao())
 
     // ------------------------------------------------------------------------
-    // Auth State Simulated
+    // Auth State - Defaulting to Empty to force Login Screen at startup
     // ------------------------------------------------------------------------
-    private val _currentUserId = MutableStateFlow("jefersonribeiro199026@gmail.com")
+    private val _currentUserId = MutableStateFlow("")
     val currentUserId: StateFlow<String> = _currentUserId.asStateFlow()
 
     private val _currentUserProfile = MutableStateFlow<Profile?>(null)
     val currentUserProfile: StateFlow<Profile?> = _currentUserProfile.asStateFlow()
 
-    private val _currentUserRole = MutableStateFlow("super_admin")
+    private val _currentUserRole = MutableStateFlow("convidado")
     val currentUserRole: StateFlow<String> = _currentUserRole.asStateFlow()
 
     // ------------------------------------------------------------------------
@@ -775,6 +775,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun markNotificationAsRead(id: Int) {
+        viewModelScope.launch {
+            repository.markNotificationAsRead(id)
+        }
+    }
+
     fun addStudyMaterial(title: String, description: String, fileUrl: String, type: String) {
         viewModelScope.launch {
             if (currentUserRole.value != "super_admin" && currentUserRole.value != "moderador") {
@@ -801,6 +807,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             repository.deleteStudyMaterialById(id)
             SupabaseSync.deleteFromSupabase(getApplication(), "study_materials", "id", id)
             logAdminAction("Material Deletado", "ID: $id")
+        }
+    }
+
+    fun pullDataFromSupabase() {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                SupabaseSync.pullAllData(getApplication(), database.dao())
+            } catch (t: Throwable) {
+                android.util.Log.e("MainViewModel", "Erro ao puxar dados manualmente: ${t.message}")
+            }
         }
     }
 

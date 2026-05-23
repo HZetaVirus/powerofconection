@@ -1,4 +1,4 @@
-# Documentação do Banco de Dados e API do Power Connection
+# Documentação do Banco de Dados e API do Poder da Conexão
 
 Esta documentação detalha toda a modelagem de dados, arquiteturas de persistência local (**Room Database**) e sincronização remota (**Supabase / PostgreSQL**), bem como as diretrizes completas de endpoints REST (CRUD) para o desenvolvimento de um back-end dedicado ou integração direta.
 
