@@ -1,0 +1,6 @@
+{
+  "name": "Power of Connection",
+  "description": "Rede acadêmica e colaborativa para alunos de Pedagogia da UERJ com recursos de ajuda, mapas mentais, grupos de estudo e moderação.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

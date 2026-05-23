@@ -1,0 +1,65 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Shadow / Ambient Glow -->
+    <path
+        android:fillColor="#151E40AF"
+        android:pathData="M 54,22 L 86,38 Q 88,39 88,42 L 88,44 Q 88,47 86,48 L 54,64 Q 52,65 54,65 L 22,48 Q 20,47 20,44 L 20,42 Q 20,39 22,38 Z" />
+
+    <!-- Connection Paths (Golden lines representing network threads) -->
+    <!-- Cap bottom to Node 1 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M 40,64 L 28,78" />
+    <!-- Cap bottom to Node 2 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M 54,68 L 54,82" />
+    <!-- Cap bottom to Node 3 -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M 68,64 L 80,78" />
+    
+    <!-- Cap Rhombus (Main Top) -->
+    <path
+        android:fillColor="#FACC15"
+        android:pathData="M 54,24 L 84,39 L 54,54 L 24,39 Z" />
+
+    <!-- Cap Under-Shield Band (Academic ribbon) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 38,48 L 38,62 C 38,70 70,70 70,62 L 70,48 L 54,56 Z" />
+
+    <!-- Hanging Tassel -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M 54,39 L 28,45 L 28,58" />
+    <path
+        android:fillColor="#FACC15"
+        android:pathData="M 28,58 C 29.5,58 31,59.5 31,61 C 31,62.5 29.5,64 28,64 C 26.5,64 25,62.5 25,61 C 25,59.5 26.5,58 28,58 Z" />
+
+    <!-- Network Nodes (Circular glowing points of connection) -->
+    <!-- Node 1 (Left) -->
+    <path
+        android:fillColor="#FACC15"
+        android:pathData="M 28,78 C 30.5,78 32.5,80 32.5,82.5 C 32.5,85 30.5,87 28,87 C 25.5,87 23.5,85 23.5,82.5 C 23.5,80 25.5,78 28,78 Z" />
+    <!-- Node 2 (Center) -->
+    <path
+        android:fillColor="#FACC15"
+        android:pathData="M 54,82 C 56.5,82 58.5,84 58.5,86.5 C 58.5,89 56.5,91 54,91 C 51.5,91 49.5,89 49.5,86.5 C 49.5,84 51.5,82 54,82 Z" />
+    <!-- Node 3 (Right) -->
+    <path
+        android:fillColor="#FACC15"
+        android:pathData="M 80,78 C 82.5,78 84.5,80 84.5,82.5 C 84.5,85 82.5,87 80,87 C 77.5,87 75.5,85 75.5,82.5 C 75.5,80 77.5,78 80,78 Z" />
+</vector>
