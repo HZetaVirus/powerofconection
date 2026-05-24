@@ -2597,113 +2597,7 @@ fun StaffAdminPanelScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Zoom Videoconferencing Controller for Admins
-                item {
-                    var zoomMeetingInput by remember { mutableStateOf("84532895471") }
-                    var zoomPasswordInput by remember { mutableStateOf("123456") }
-                    var isStartingCall by remember { mutableStateOf(false) }
 
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.VideoCall, contentDescription = null, tint = Color(0xFF2D8CFF), modifier = Modifier.size(32.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Painel do Zoom Videoconferência", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                "Configure e inicie reuniões Zoom in-app. Ao iniciar, a transmissão será propagada em tempo real para todos os alunos.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                OutlinedTextField(
-                                    value = zoomMeetingInput,
-                                    onValueChange = { zoomMeetingInput = it },
-                                    label = { Text("ID Reunião") },
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true,
-                                    shape = RoundedCornerShape(10.dp)
-                                )
-                                OutlinedTextField(
-                                    value = zoomPasswordInput,
-                                    onValueChange = { zoomPasswordInput = it },
-                                    label = { Text("Senha") },
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true,
-                                    shape = RoundedCornerShape(10.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                val activeCalls = viewModel.allActiveCalls.collectAsStateWithLifecycle().value
-                                val activeCall = activeCalls.firstOrNull { it.criado_por == viewModel.currentUserId.value }
-                                if (activeCall == null) {
-                                    Button(
-                                        onClick = {
-                                            isStartingCall = true
-                                            // 1. Fetch SDK JWT & ZAK Token from Supabase Edge Function
-                                            SupabaseSync.fetchZoomTokens(context, zoomMeetingInput) { success, signature, zak ->
-                                                if (success && signature != null && zak != null) {
-                                                    // 2. Initialize Zoom SDK in context
-                                                    ZoomSDKManager.inicializarSDK(context, signature) { initSuccess, _ ->
-                                                        if (initSuccess) {
-                                                            // 3. Start Meeting as Host
-                                                            viewModel.startZoomMeeting(
-                                                                context = context,
-                                                                meetingNo = zoomMeetingInput,
-                                                                password = zoomPasswordInput,
-                                                                zakToken = zak,
-                                                                subjectId = null
-                                                            ) { startSuccess ->
-                                                                isStartingCall = false
-                                                                if (!startSuccess) {
-                                                                    Toast.makeText(context, "Falha ao iniciar reunião no SDK do Zoom", Toast.LENGTH_SHORT).show()
-                                                                }
-                                                            }
-                                                        } else {
-                                                            isStartingCall = false
-                                                            Toast.makeText(context, "Erro de inicialização do SDK Zoom", Toast.LENGTH_SHORT).show()
-                                                        }
-                                                    }
-                                                } else {
-                                                    isStartingCall = false
-                                                    Toast.makeText(context, "Erro ao obter assinatura do Zoom no Backend", Toast.LENGTH_SHORT).show()
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2D8CFF)),
-                                        enabled = !isStartingCall
-                                    ) {
-                                        Text(if (isStartingCall) "Iniciando..." else "Iniciar Chamada como Host", fontWeight = FontWeight.Bold)
-                                    }
-                                } else {
-                                    Button(
-                                        onClick = {
-                                            viewModel.endZoomMeeting(context, activeCall.id)
-                                        },
-                                        modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                                    ) {
-                                        Text("Encerrar Chamada Ativa", fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
 
                 // Team management Section
                 item {
@@ -4871,118 +4765,264 @@ fun HelpAndGroupsHub(
                 }
 
                 // --------------------------------------------------------------------
-                // DYNAMIC ZOOM VIDEO CALL CARD ("Vídeo-aula") - Visible ONLY when a call is active
+                // ZOOM VIDEOCONFERENCE INTERFACE DIRECTLY IN MURAL DE AJUDA
                 // --------------------------------------------------------------------
-                val mySubjectName = currentUserProfile?.selected_materia
-                val activeMeeting = activeCalls.firstOrNull { call ->
-                    call.status == "ativa" && (call.subject_id == null || subjects.find { it.id == call.subject_id }?.title?.equals(mySubjectName, ignoreCase = true) == true)
-                }
+                if (currentUserRole == "moderador" || currentUserRole == "super_admin") {
+                    var zoomMeetingInput by remember { mutableStateOf("84532895471") }
+                    var zoomPasswordInput by remember { mutableStateOf("123456") }
+                    var isStartingCall by remember { mutableStateOf(false) }
+                    val activeCall = activeCalls.firstOrNull { it.criado_por == currentUserId }
 
-                if (activeMeeting != null) {
-                    var isJoiningCall by remember { mutableStateOf(false) }
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                         ),
-                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Filled.VideoCall,
-                                        contentDescription = "Vídeo-aula Ativa",
-                                        tint = UerjBlue,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        "Vídeo-aula",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Black,
-                                        color = UerjBlue
-                                    )
-                                }
-
-                                Box(
-                                    modifier = Modifier
-                                        .background(UerjGreen.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(6.dp)
-                                                .background(UerjGreen, CircleShape)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            "AO VIVO",
-                                            color = UerjGreen,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Black
-                                        )
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Text(
-                                text = "Uma vídeo-aula interativa via Zoom com o seu tutor foi iniciada e está acontecendo agora! Clique no botão abaixo para ingressar de forma 100% in-app.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            Button(
-                                onClick = {
-                                    if (viewModel != null) {
-                                        isJoiningCall = true
-                                        SupabaseSync.fetchZoomTokens(context, activeMeeting.zoom_meeting_id) { success, signature, zak ->
-                                            if (success && signature != null) {
-                                                ZoomSDKManager.inicializarSDK(context, signature) { initSuccess, _ ->
-                                                    isJoiningCall = false
-                                                    if (initSuccess) {
-                                                        viewModel.joinZoomMeeting(
-                                                            context = context,
-                                                            meetingNo = activeMeeting.zoom_meeting_id,
-                                                            password = activeMeeting.zoom_password,
-                                                            displayName = currentUserProfile?.nome ?: "Discente UERJ"
-                                                        ) { _ -> }
-                                                    } else {
-                                                        Toast.makeText(context, "Erro de inicialização do SDK Zoom", Toast.LENGTH_SHORT).show()
-                                                    }
-                                                }
-                                            } else {
-                                                isJoiningCall = false
-                                                Toast.makeText(context, "Erro ao obter assinatura do Zoom no Backend", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = UerjBlue),
-                                enabled = !isJoiningCall
-                            ) {
-                                Icon(Icons.Filled.VideoCameraFront, contentDescription = "Entrar")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Filled.VideoCall,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2D8CFF),
+                                    modifier = Modifier.size(32.dp)
+                                )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = if (isJoiningCall) "Conectando..." else "Entrar na Vídeo-aula",
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
+                                    text = "Painel do Zoom Vídeo-aula",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
                                 )
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "Inicie e gerencie a transmissão de vídeo-aulas via Zoom Meeting SDK de forma 100% in-app para os alunos do polo.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(14.dp))
+                            
+                            if (activeCall == null) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    OutlinedTextField(
+                                        value = zoomMeetingInput,
+                                        onValueChange = { zoomMeetingInput = it },
+                                        label = { Text("ID Reunião") },
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(10.dp)
+                                    )
+                                    OutlinedTextField(
+                                        value = zoomPasswordInput,
+                                        onValueChange = { zoomPasswordInput = it },
+                                        label = { Text("Senha") },
+                                        modifier = Modifier.weight(1f),
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(10.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Button(
+                                    onClick = {
+                                        if (viewModel != null) {
+                                            isStartingCall = true
+                                            SupabaseSync.fetchZoomTokens(context, zoomMeetingInput) { success, signature, zak ->
+                                                if (success && signature != null && zak != null) {
+                                                    ZoomSDKManager.inicializarSDK(context, signature) { initSuccess, _ ->
+                                                        if (initSuccess) {
+                                                            viewModel.startZoomMeeting(
+                                                                context = context,
+                                                                meetingNo = zoomMeetingInput,
+                                                                password = zoomPasswordInput,
+                                                                zakToken = zak,
+                                                                subjectId = null
+                                                            ) { startSuccess ->
+                                                                isStartingCall = false
+                                                                if (!startSuccess) {
+                                                                    Toast.makeText(context, "Falha ao iniciar reunião no SDK do Zoom", Toast.LENGTH_SHORT).show()
+                                                                }
+                                                            }
+                                                        } else {
+                                                            isStartingCall = false
+                                                            Toast.makeText(context, "Erro de inicialização do SDK Zoom", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    }
+                                                } else {
+                                                    isStartingCall = false
+                                                    Toast.makeText(context, "Erro ao obter assinatura do Zoom no Backend", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2D8CFF)),
+                                    enabled = !isStartingCall
+                                ) {
+                                    Icon(Icons.Filled.VideoCameraFront, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = if (isStartingCall) "Iniciando..." else "Iniciar Vídeo-aula (Host)",
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color(0xFFE0F2FE), RoundedCornerShape(8.dp))
+                                        .padding(12.dp)
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = "Reunião Ativa no Canal: ${activeCall.zoom_meeting_id}",
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = Color(0xFF0369A1)
+                                        )
+                                        Text(
+                                            text = "Senha: ${activeCall.zoom_password} | Status: Transmitindo",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFF0284C7)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Button(
+                                    onClick = {
+                                        if (viewModel != null) {
+                                            viewModel.endZoomMeeting(context, activeCall.id)
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                                ) {
+                                    Icon(Icons.Filled.Cancel, contentDescription = null, tint = Color.White)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Encerrar Vídeo-aula", fontWeight = FontWeight.Bold, color = Color.White)
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // For regular students
+                    val mySubjectName = currentUserProfile?.selected_materia
+                    val activeMeeting = activeCalls.firstOrNull { call ->
+                        call.status == "ativa" && (call.subject_id == null || subjects.find { it.id == call.subject_id }?.title?.equals(mySubjectName, ignoreCase = true) == true)
+                    }
+
+                    if (activeMeeting != null) {
+                        var isJoiningCall by remember { mutableStateOf(false) }
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
+                            ),
+                            border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Filled.VideoCall,
+                                            contentDescription = "Vídeo-aula Ativa",
+                                            tint = UerjBlue,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            "Vídeo-aula",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Black,
+                                            color = UerjBlue
+                                        )
+                                    }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .background(UerjGreen.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(6.dp)
+                                                    .background(UerjGreen, CircleShape)
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                "AO VIVO",
+                                                color = UerjGreen,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Black
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Text(
+                                    text = "Uma vídeo-aula interativa via Zoom com o seu tutor foi iniciada e está acontecendo agora! Clique no botão abaixo para ingressar de forma 100% in-app.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                Button(
+                                    onClick = {
+                                        if (viewModel != null) {
+                                            isJoiningCall = true
+                                            SupabaseSync.fetchZoomTokens(context, activeMeeting.zoom_meeting_id) { success, signature, zak ->
+                                                if (success && signature != null) {
+                                                    ZoomSDKManager.inicializarSDK(context, signature) { initSuccess, _ ->
+                                                        isJoiningCall = false
+                                                        if (initSuccess) {
+                                                            viewModel.joinZoomMeeting(
+                                                                context = context,
+                                                                meetingNo = activeMeeting.zoom_meeting_id,
+                                                                password = activeMeeting.zoom_password,
+                                                                displayName = currentUserProfile?.nome ?: "Discente UERJ"
+                                                            ) { _ -> }
+                                                        } else {
+                                                            Toast.makeText(context, "Erro de inicialização do SDK Zoom", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    }
+                                                } else {
+                                                    isJoiningCall = false
+                                                    Toast.makeText(context, "Erro ao obter assinatura do Zoom no Backend", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = UerjBlue),
+                                    enabled = !isJoiningCall
+                                ) {
+                                    Icon(Icons.Filled.VideoCameraFront, contentDescription = "Entrar")
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = if (isJoiningCall) "Conectando..." else "Entrar na Vídeo-aula",
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
                             }
                         }
                     }
