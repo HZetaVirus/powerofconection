@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.graphics.asComposePath
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.data.*
@@ -2097,6 +2098,25 @@ fun AppSplashScreen() {
     }
 }
 
+@Composable
+fun GoogleLogoIcon(modifier: Modifier = Modifier) {
+    val pathRed = remember { androidx.core.graphics.PathParser.createPathFromPathData("M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z").asComposePath() }
+    val pathBlue = remember { androidx.core.graphics.PathParser.createPathFromPathData("M48 24c0-1.71-.15-3.37-.44-4.98H24v9.45h13.51c-.58 3.12-2.33 5.76-4.96 7.53l7.73 5.99C44.79 38.07 48 31.57 48 24z").asComposePath() }
+    val pathYellow = remember { androidx.core.graphics.PathParser.createPathFromPathData("M10.54 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59L2.56 13.22C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.98-6.19z").asComposePath() }
+    val pathGreen = remember { androidx.core.graphics.PathParser.createPathFromPathData("M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-5.99c-2.18 1.46-4.96 2.3-8.16 2.3-6.26 0-11.57-4.22-13.46-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z").asComposePath() }
+
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        val scaleX = size.width / 48f
+        val scaleY = size.height / 48f
+        androidx.compose.ui.graphics.drawscope.scale(scaleX, scaleY, Offset.Zero) {
+            drawPath(pathRed, Color(0xFFEA4335))
+            drawPath(pathBlue, Color(0xFF4285F4))
+            drawPath(pathYellow, Color(0xFFFBBC05))
+            drawPath(pathGreen, Color(0xFF34A853))
+        }
+    }
+}
+
 // ------------------------------------------------------------------------@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
@@ -2252,21 +2272,9 @@ fun LoginScreen(
                         horizontalArrangement = Arrangement.Center,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
-                        // circular red "G" badge
-                        Box(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .background(Color(0xFFEA4335), CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "G",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(14.dp))
+                        // Beautiful multi-colored Google logo
+                        GoogleLogoIcon(modifier = Modifier.size(28.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = "Entrar com o Google de Estudante",
                             fontWeight = FontWeight.Bold, // Updated to match bold typography
