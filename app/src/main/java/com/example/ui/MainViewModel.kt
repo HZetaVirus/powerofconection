@@ -355,8 +355,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             // Support adding custom selected subjects immediately so they exist in database
             if (selectedMateria.isNotBlank()) {
                 val existing = repository.getAllSubjects().first()
-                if (existing.none { it.title.equals(selectedMateria, ignoreCase = true) }) {
-                    repository.insertSubject(Subject(title = selectedMateria, description = "Disciplina associada ao curso $finalCourse"))
+                val existingSubject = existing.find { it.title.equals(selectedMateria, ignoreCase = true) }
+                if (existingSubject == null) {
+                    val newSubject = Subject(title = selectedMateria, description = "Disciplina associada ao curso $finalCourse")
+                    val insertedId = repository.insertSubject(newSubject)
+                    val syncedSubject = newSubject.copy(id = insertedId.toInt())
+                    SupabaseSync.syncSubject(getApplication(), syncedSubject)
                 }
             }
 

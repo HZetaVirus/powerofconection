@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.data.*
@@ -632,15 +633,14 @@ fun MainApp(
 
         AlertDialog(
             onDismissRequest = {
-                viewModel.handleOnboarding(
-                    nome = if (nomeInput.isBlank()) "Estudante" else nomeInput,
-                    curso = selectedCurso,
-                    periodo = selectedPeriodo,
-                    bio = "Polo: $selectedCurso • Período: $selectedPeriodo",
-                    selectedMateria = materiaInput
-                )
-                showOnboardingDialog = false
+                if (currentUserProfile?.curso?.isNotEmpty() == true) {
+                    showOnboardingDialog = false
+                }
             },
+            properties = DialogProperties(
+                dismissOnBackPress = currentUserProfile?.curso?.isNotEmpty() == true,
+                dismissOnClickOutside = currentUserProfile?.curso?.isNotEmpty() == true
+            ),
             confirmButton = {}, // Handled inside text Column to support scrollability
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -863,21 +863,23 @@ fun MainApp(
                             Text("Confirmar e Salvar Cadastro", fontWeight = FontWeight.Bold)
                         }
 
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.handleOnboarding(
-                                    nome = "Estudante",
-                                    curso = "Lic. Pedagogia/UERJ",
-                                    periodo = "1º Período",
-                                    bio = "Pulou onboarding",
-                                    selectedMateria = getDefaultSubjectForCourse("Lic. Pedagogia/UERJ", "1º Período")
-                                )
-                                showOnboardingDialog = false
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Pular Onboarding")
+                        if (currentUserProfile?.curso?.isNotEmpty() == true) {
+                            OutlinedButton(
+                                onClick = {
+                                    viewModel.handleOnboarding(
+                                        nome = "Estudante",
+                                        curso = "Lic. Pedagogia/UERJ",
+                                        periodo = "1º Período",
+                                        bio = "Pulou onboarding",
+                                        selectedMateria = getDefaultSubjectForCourse("Lic. Pedagogia/UERJ", "1º Período")
+                                    )
+                                    showOnboardingDialog = false
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Pular Onboarding")
+                            }
                         }
                     }
                 }

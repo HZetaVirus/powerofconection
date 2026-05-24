@@ -84,7 +84,7 @@ interface AppDao {
     fun getAllSubjects(): Flow<List<Subject>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertSubject(subject: Subject)
+    suspend fun insertSubject(subject: Subject): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSubjects(subjects: List<Subject>)

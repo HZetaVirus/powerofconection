@@ -42,7 +42,7 @@ class AppRepository(private val dao: AppDao) {
 
     // Subjects
     fun getAllSubjects(): Flow<List<Subject>> = dao.getAllSubjects()
-    suspend fun insertSubject(subject: Subject) = dao.insertSubject(subject)
+    suspend fun insertSubject(subject: Subject): Long = dao.insertSubject(subject)
 
     // Mindmaps
     fun getAllMindmaps(): Flow<List<Mindmap>> = dao.getAllMindmaps()

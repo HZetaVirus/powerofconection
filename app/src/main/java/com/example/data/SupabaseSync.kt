@@ -223,6 +223,19 @@ object SupabaseSync {
         }
     }
 
+    fun syncSubject(context: Context, subject: Subject, onComplete: ((Boolean, String?) -> Unit)? = null) {
+        try {
+            val json = JSONObject().apply {
+                if (subject.id != 0) put("id", subject.id)
+                put("title", subject.title)
+                put("description", subject.description)
+            }
+            postToSupabase(context, "subjects", json.toString(), onComplete)
+        } catch (e: Exception) {
+            onComplete?.invoke(false, e.message)
+        }
+    }
+
     fun syncPost(context: Context, post: Post, onComplete: ((Boolean, String?) -> Unit)? = null) {
         try {
             val json = JSONObject().apply {
