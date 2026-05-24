@@ -67,6 +67,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val allAuditLogs: StateFlow<List<AuditLog>> = repository.getAllAuditLogs()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    val allActiveCalls: StateFlow<List<ActiveCall>> = repository.getActiveCallsFlow()
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     companion object {
         val PoloCoursesList = listOf(
             "Administração Pública/UFF",
@@ -926,6 +929,81 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             repository.insertPost(post)
             SupabaseSync.syncPost(getApplication(), post)
             logAdminAction("Admin CRUD: Postagem Salva", "ID: ${post.id} | Conteúdo: ${post.content.take(20)}")
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // ZOOM VIDEOCONFERENCE ACTIONS
+    // ------------------------------------------------------------------------
+    fun startZoomMeeting(
+        context: android.content.Context,
+        meetingNo: String,
+        password: String,
+        zakToken: String,
+        subjectId: Int?,
+        onResult: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val user = currentUserId.value
+            val role = repository.getRoleByUserId(user)
+            if (role?.role == "admin" || role?.role == "super_admin") {
+                val newCall = ActiveCall(
+                    id = (System.currentTimeMillis() % 100000000).toInt(),
+                    zoom_meeting_id = meetingNo.trim().replace(" ", ""),
+                    zoom_password = password,
+                    status = "ativa",
+                    criado_por = user,
+                    subject_id = subjectId
+                )
+                
+                // 1. Sync Active Call entry to Supabase
+                SupabaseSync.syncActiveCall(context, newCall) { success, _ ->
+                    if (success) {
+                        viewModelScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                            // 2. Start the Zoom SDK Meeting as Host
+                            val startSuccess = ZoomSDKManager.iniciarReuniaoComoAdmin(
+                                context = context,
+                                meetingId = meetingNo,
+                                password = password,
+                                zakToken = zakToken,
+                                displayName = currentUserProfile.value?.nome ?: "Docente Host"
+                            )
+                            onResult(startSuccess)
+                        }
+                    } else {
+                        onResult(false)
+                    }
+                }
+            } else {
+                onResult(false)
+            }
+        }
+    }
+
+    fun joinZoomMeeting(
+        context: android.content.Context,
+        meetingNo: String,
+        password: String,
+        displayName: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+            val success = ZoomSDKManager.ingressarReuniaoComoParticipante(
+                context = context,
+                meetingId = meetingNo,
+                password = password,
+                displayName = displayName
+            )
+            onResult(success)
+        }
+    }
+
+    fun endZoomMeeting(context: android.content.Context, callId: Int) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            // 1. Leave SDK Meeting
+            ZoomSDKManager.sairDaChamada(endMeeting = true)
+            // 2. Delete Call entry from Supabase
+            SupabaseSync.deleteActiveCall(context, callId)
         }
     }
 }

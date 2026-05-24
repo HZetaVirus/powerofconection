@@ -163,8 +163,6 @@ fun MainApp(
 
     var activeGroupDetail by remember { mutableStateOf<StudyGroup?>(null) }
     var activeThreadDetail by remember { mutableStateOf<GroupThread?>(null) }
-    var activeJitsiRoomName by remember { mutableStateOf<String?>(null) }
-    var activeJitsiRoomTitle by remember { mutableStateOf<String?>(null) }
 
     // Dialog creators
     var showCreatePostDialog by remember { mutableStateOf(false) }
@@ -195,18 +193,6 @@ fun MainApp(
     Crossfade(targetState = showSplashScreen, label = "screen_transition") { isSplash ->
         if (isSplash) {
             AppSplashScreen()
-        } else if (activeJitsiRoomName != null) {
-            JitsiInframeScreen(
-                roomName = activeJitsiRoomName!!,
-                roomTitle = activeJitsiRoomTitle ?: "Tutoria Online",
-                userName = currentUserProfile?.nome ?: "Discente da UERJ",
-                userEmail = currentUserProfile?.id ?: "estudante@uerj.br",
-                userAvatar = currentUserProfile?.foto_url ?: "",
-                onClose = {
-                    activeJitsiRoomName = null
-                    activeJitsiRoomTitle = null
-                }
-            )
         } else if (currentUserId.isEmpty()) {
             // Sign In View
             LoginScreen(
@@ -495,7 +481,100 @@ fun MainApp(
                         .fillMaxHeight()
                         .background(MaterialTheme.colorScheme.background)
                 ) {
-                when (currentTab) {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        val activeCallsState = viewModel.allActiveCalls.collectAsStateWithLifecycle().value
+                        val mySubjectName = currentUserProfile?.selected_materia
+                        val activeMeeting = activeCallsState.firstOrNull { call ->
+                            call.status == "ativa" && (call.subject_id == null || subjects.find { it.id == call.subject_id }?.title?.equals(mySubjectName, ignoreCase = true) == true)
+                        }
+
+                        if (activeMeeting != null) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary),
+                                elevation = CardDefaults.cardElevation(4.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(44.dp)
+                                                .background(Color(0xFF2D8CFF), CircleShape), // Zoom Blue
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.VideoCall,
+                                                contentDescription = "Zoom",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(26.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column {
+                                            Text(
+                                                text = "Tutoria de Vídeo ao Vivo!",
+                                                fontWeight = FontWeight.ExtraBold,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                            Text(
+                                                text = "Reunião Zoom ID: ${activeMeeting.zoom_meeting_id}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                            )
+                                        }
+                                    }
+                                    
+                                    var isJoiningCall by remember { mutableStateOf(false) }
+                                    Button(
+                                        onClick = {
+                                            isJoiningCall = true
+                                            SupabaseSync.fetchZoomTokens(context, activeMeeting.zoom_meeting_id) { success, signature, zak ->
+                                                if (success && signature != null) {
+                                                    ZoomSDKManager.inicializarSDK(context, signature) { initSuccess, _ ->
+                                                        isJoiningCall = false
+                                                        if (initSuccess) {
+                                                            viewModel.joinZoomMeeting(
+                                                                context = context,
+                                                                meetingNo = activeMeeting.zoom_meeting_id,
+                                                                password = activeMeeting.zoom_password,
+                                                                displayName = currentUserProfile?.nome ?: "Discente UERJ"
+                                                            ) { _ -> }
+                                                        } else {
+                                                            Toast.makeText(context, "Erro de inicialização do SDK Zoom", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    }
+                                                } else {
+                                                    isJoiningCall = false
+                                                    Toast.makeText(context, "Erro ao obter assinatura do Zoom no Backend", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2D8CFF)),
+                                        shape = RoundedCornerShape(12.dp),
+                                        enabled = !isJoiningCall
+                                    ) {
+                                        Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(if (isJoiningCall) "Entrando..." else "Ingressar", fontWeight = FontWeight.Bold, color = Color.White)
+                                    }
+                                }
+                            }
+                        }
+
+                        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                            when (currentTab) {
                     "home" -> {
                         DashboardScreen(
                             posts = posts,
@@ -579,10 +658,7 @@ fun MainApp(
                             },
                             threadsProvider = { groupId -> viewModel.getThreadsForGroup(groupId) },
                             threadCommentsProvider = { threadId -> viewModel.getCommentsForThread(threadId) },
-                            onJoinVideoTutoria = { room, title ->
-                                activeJitsiRoomName = room
-                                activeJitsiRoomTitle = title
-                            },
+                            onJoinVideoTutoria = { _, _ -> },
                             allRoles = allRoles,
                             profiles = profiles,
                             currentUserProfile = currentUserProfile
@@ -621,6 +697,7 @@ fun MainApp(
             }
         }
     }
+}
 }
 }
 
@@ -2518,6 +2595,114 @@ fun StaffAdminPanelScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Zoom Videoconferencing Controller for Admins
+                item {
+                    var zoomMeetingInput by remember { mutableStateOf("84532895471") }
+                    var zoomPasswordInput by remember { mutableStateOf("123456") }
+                    var isStartingCall by remember { mutableStateOf(false) }
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.VideoCall, contentDescription = null, tint = Color(0xFF2D8CFF), modifier = Modifier.size(32.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Painel do Zoom Videoconferência", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                "Configure e inicie reuniões Zoom in-app. Ao iniciar, a transmissão será propagada em tempo real para todos os alunos.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedTextField(
+                                    value = zoomMeetingInput,
+                                    onValueChange = { zoomMeetingInput = it },
+                                    label = { Text("ID Reunião") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                OutlinedTextField(
+                                    value = zoomPasswordInput,
+                                    onValueChange = { zoomPasswordInput = it },
+                                    label = { Text("Senha") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                val activeCalls = viewModel.allActiveCalls.collectAsStateWithLifecycle().value
+                                val activeCall = activeCalls.firstOrNull { it.criado_por == viewModel.currentUserId.value }
+                                if (activeCall == null) {
+                                    Button(
+                                        onClick = {
+                                            isStartingCall = true
+                                            // 1. Fetch SDK JWT & ZAK Token from Supabase Edge Function
+                                            SupabaseSync.fetchZoomTokens(context, zoomMeetingInput) { success, signature, zak ->
+                                                if (success && signature != null && zak != null) {
+                                                    // 2. Initialize Zoom SDK in context
+                                                    ZoomSDKManager.inicializarSDK(context, signature) { initSuccess, _ ->
+                                                        if (initSuccess) {
+                                                            // 3. Start Meeting as Host
+                                                            viewModel.startZoomMeeting(
+                                                                context = context,
+                                                                meetingNo = zoomMeetingInput,
+                                                                password = zoomPasswordInput,
+                                                                zakToken = zak,
+                                                                subjectId = null
+                                                            ) { startSuccess ->
+                                                                isStartingCall = false
+                                                                if (!startSuccess) {
+                                                                    Toast.makeText(context, "Falha ao iniciar reunião no SDK do Zoom", Toast.LENGTH_SHORT).show()
+                                                                }
+                                                            }
+                                                        } else {
+                                                            isStartingCall = false
+                                                            Toast.makeText(context, "Erro de inicialização do SDK Zoom", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    }
+                                                } else {
+                                                    isStartingCall = false
+                                                    Toast.makeText(context, "Erro ao obter assinatura do Zoom no Backend", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2D8CFF)),
+                                        enabled = !isStartingCall
+                                    ) {
+                                        Text(if (isStartingCall) "Iniciando..." else "Iniciar Chamada como Host", fontWeight = FontWeight.Bold)
+                                    }
+                                } else {
+                                    Button(
+                                        onClick = {
+                                            viewModel.endZoomMeeting(context, activeCall.id)
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                                    ) {
+                                        Text("Encerrar Chamada Ativa", fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Team management Section
                 item {
                     Text(
@@ -4711,7 +4896,7 @@ fun HelpAndGroupsHub(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        "Monitoria Online ao Vivo (Jitsi Framework)",
+                                        "Monitoria Online ao Vivo (Zoom Meeting SDK)",
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = UerjBlue
@@ -5732,219 +5917,6 @@ fun AgendaScreen(
                     }
                 }
             }
-        }
-    }
-}
-
-// ------------------------------------------------------------------------
-// COMPONENT: Embedded Jitsi WebRTC WebView (Inframe) Screen
-// ------------------------------------------------------------------------
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun JitsiInframeScreen(
-    roomName: String,
-    roomTitle: String,
-    userName: String,
-    userEmail: String,
-    userAvatar: String,
-    onClose: () -> Unit
-) {
-    val context = LocalContext.current
-    
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val cam = permissions[android.Manifest.permission.CAMERA] ?: false
-        val mic = permissions[android.Manifest.permission.RECORD_AUDIO] ?: false
-        if (!cam || !mic) {
-            Toast.makeText(context, "As permissões de câmera e áudio são necessárias para a tutoria por vídeo.", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        val camOk = ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-        val micOk = ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-        if (!camOk || !micOk) {
-            requestPermissionLauncher.launch(
-                arrayOf(
-                    android.Manifest.permission.CAMERA,
-                    android.Manifest.permission.RECORD_AUDIO
-                )
-            )
-        }
-    }
-
-    val cleanRoomName = remember(roomName) {
-        roomName.trim()
-            .replace(" ", "_")
-            .replace("º", "")
-            .replace("ª", "")
-            .replace("-", "_")
-            .filter { it.isLetterOrDigit() || it == '_' }
-    }
-    
-    val displayName = remember(userName) {
-        try {
-            java.net.URLEncoder.encode(userName, "UTF-8")
-        } catch (e: Exception) {
-            userName
-        }
-    }
-    val displayEmail = remember(userEmail) {
-        try {
-            java.net.URLEncoder.encode(userEmail, "UTF-8")
-        } catch (e: Exception) {
-            userEmail
-        }
-    }
-    val displayAvatar = remember(userAvatar) { 
-        try {
-            if (userAvatar.startsWith("http")) java.net.URLEncoder.encode(userAvatar, "UTF-8") else ""
-        } catch (e: Exception) {
-            ""
-        }
-    }
-
-    val jitsiUrl = remember(cleanRoomName, displayName, displayEmail, displayAvatar) {
-        val hashBuilder = StringBuilder()
-        hashBuilder.append("config.prejoinPageEnabled=false")
-        hashBuilder.append("&userInfo.displayName=\"$displayName\"")
-        if (displayEmail.isNotEmpty()) {
-            hashBuilder.append("&userInfo.email=\"$displayEmail\"")
-        }
-        if (displayAvatar.isNotEmpty()) {
-            hashBuilder.append("&avatarURL=\"$displayAvatar\"")
-        }
-        "https://meet.jit.si/$cleanRoomName#${hashBuilder.toString()}"
-    }
-
-    var hasLoadedUrl by remember(jitsiUrl) { mutableStateOf(false) }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = roomTitle,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = UerjBlue
-                        )
-                        Text(
-                            text = "Acesso Vinculado: $userName",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Sair do Vídeo")
-                    }
-                },
-                actions = {
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 12.dp)
-                            .background(UerjGreen.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
-                            .border(1.dp, UerjGreen, RoundedCornerShape(8.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .background(Color(0xFF22C55E), CircleShape)
-                            )
-                            Text(
-                                "AO VIVO",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = UerjGreen
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(Color.Black)
-        ) {
-            AndroidView(
-                factory = { ctx ->
-                    try {
-                        WebView(ctx).apply {
-                            webViewClient = WebViewClient()
-                            webChromeClient = object : WebChromeClient() {
-                                override fun onPermissionRequest(request: PermissionRequest) {
-                                    val hasCam = ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                                    val hasMic = ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                                    
-                                    val grantedResources = mutableListOf<String>()
-                                    for (res in request.resources) {
-                                        if (res == PermissionRequest.RESOURCE_VIDEO_CAPTURE && hasCam) {
-                                            grantedResources.add(res)
-                                        } else if (res == PermissionRequest.RESOURCE_AUDIO_CAPTURE && hasMic) {
-                                            grantedResources.add(res)
-                                        } else if (res != PermissionRequest.RESOURCE_VIDEO_CAPTURE && res != PermissionRequest.RESOURCE_AUDIO_CAPTURE) {
-                                            grantedResources.add(res)
-                                        }
-                                    }
-                                    
-                                    if (grantedResources.isNotEmpty()) {
-                                        request.grant(grantedResources.toTypedArray())
-                                    } else {
-                                        request.deny()
-                                    }
-                                }
-                            }
-                            
-                            settings.apply {
-                                javaScriptEnabled = true
-                                domStorageEnabled = true
-                                mediaPlaybackRequiresUserGesture = false
-                                allowFileAccess = true
-                                javaScriptCanOpenWindowsAutomatically = true
-                                useWideViewPort = true
-                                loadWithOverviewMode = true
-                            }
-                        }
-                    } catch (t: Throwable) {
-                        android.util.Log.e("JitsiInframeScreen", "Erro ao iniciar WebView: ${t.message}", t)
-                        android.widget.TextView(ctx).apply {
-                            text = "A videoconferência não está disponível neste dispositivo porque o Android System WebView não está instalado ou ativado."
-                            textSize = 15f
-                            gravity = android.view.Gravity.CENTER
-                            setTextColor(android.graphics.Color.RED)
-                            setPadding(32, 32, 32, 32)
-                        }
-                    }
-                },
-                update = { view ->
-                    if (view is WebView && !hasLoadedUrl) {
-                        hasLoadedUrl = true
-                        try {
-                            view.loadUrl(jitsiUrl)
-                        } catch (t: Throwable) {
-                            android.util.Log.e("JitsiInframeScreen", "Erro ao carregar URL: ${t.message}", t)
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
         }
     }
 }

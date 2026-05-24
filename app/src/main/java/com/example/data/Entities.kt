@@ -174,3 +174,14 @@ data class StudyMaterial(
     val author_name: String,
     val created_at: Long = System.currentTimeMillis()
 )
+
+@Entity(tableName = "chamadas_ativas")
+data class ActiveCall(
+    @PrimaryKey val id: Int,
+    val zoom_meeting_id: String,
+    val zoom_password: String,
+    val status: String,
+    val criado_por: String,
+    val subject_id: Int?,
+    val created_at: Long = System.currentTimeMillis()
+)

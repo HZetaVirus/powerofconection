@@ -217,4 +217,14 @@ interface AppDao {
 
     @Query("DELETE FROM study_groups WHERE id = :id")
     suspend fun deleteStudyGroupById(id: Int)
+
+    // Active Calls (Zoom)
+    @Query("SELECT * FROM chamadas_ativas WHERE status = 'ativa'")
+    fun getActiveCallsFlow(): Flow<List<ActiveCall>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertActiveCalls(calls: List<ActiveCall>)
+
+    @Query("DELETE FROM chamadas_ativas")
+    suspend fun clearActiveCalls()
 }

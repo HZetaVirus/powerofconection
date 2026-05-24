@@ -113,6 +113,14 @@ class AppRepository(private val dao: AppDao) {
     suspend fun deleteHelpRequestDirectly(id: Int) = dao.deleteHelpRequestById(id)
     suspend fun deleteStudyGroupDirectly(id: Int) = dao.deleteStudyGroupById(id)
 
+    // Active Calls (Zoom)
+    fun getActiveCallsFlow(): Flow<List<ActiveCall>> = dao.getActiveCallsFlow()
+    suspend fun insertActiveCalls(calls: List<ActiveCall>) {
+        dao.clearActiveCalls()
+        dao.insertActiveCalls(calls)
+    }
+    suspend fun clearActiveCalls() = dao.clearActiveCalls()
+
     // Initial Pre-population of Database
     suspend fun prepopulateIfNeeded() {
         val currentSubjects = dao.getAllSubjects().first()

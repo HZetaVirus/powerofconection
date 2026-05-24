@@ -21,9 +21,10 @@ import androidx.room.RoomDatabase
         GroupComment::class,
         CalendarEvent::class,
         AuditLog::class,
-        StudyMaterial::class
+        StudyMaterial::class,
+        ActiveCall::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

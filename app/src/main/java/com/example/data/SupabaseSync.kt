@@ -236,6 +236,72 @@ object SupabaseSync {
         }
     }
 
+    fun fetchZoomTokens(context: Context, meetingNo: String, onComplete: (Boolean, String?, String?) -> Unit) {
+        val url = getUrl(context)
+        val key = getKey(context)
+        val token = "Bearer $key" // Safe backend auth key representation
+
+        val endpoint = "${url.trimEnd('/')}/functions/v1/generate-zoom-tokens"
+        val payload = JSONObject().apply {
+            put("meetingNumber", meetingNo)
+        }
+
+        val request = Request.Builder()
+            .url(endpoint)
+            .addHeader("apikey", key)
+            .addHeader("Authorization", token)
+            .addHeader("Content-Type", "application/json")
+            .post(payload.toString().toRequestBody(JSON_MEDIA_TYPE))
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG, "Falha ao chamar Edge Function do Zoom: ${e.message}")
+                onComplete(false, null, null)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                val body = response.body?.string()
+                if (response.isSuccessful && body != null) {
+                    try {
+                        val obj = JSONObject(body)
+                        val signature = obj.getString("signature")
+                        val zak = obj.optString("zakToken", "")
+                        onComplete(true, signature, zak)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Erro de parseamento da resposta do Zoom: ${e.message}")
+                        onComplete(false, null, null)
+                    }
+                } else {
+                    Log.e(TAG, "Código de erro da Edge Function do Zoom: ${response.code} - Resposta: $body")
+                    onComplete(false, null, null)
+                }
+                response.close()
+            }
+        })
+    }
+
+    fun syncActiveCall(context: Context, call: ActiveCall, onComplete: ((Boolean, String?) -> Unit)? = null) {
+        try {
+            val json = JSONObject().apply {
+                if (call.id != 0) put("id", call.id)
+                put("zoom_meeting_id", call.zoom_meeting_id)
+                put("zoom_password", call.zoom_password)
+                put("status", call.status)
+                put("criado_por", call.criado_por)
+                put("subject_id", if (call.subject_id == null) JSONObject.NULL else call.subject_id)
+                put("created_at", call.created_at)
+            }
+            postToSupabase(context, "chamadas_ativas", json.toString(), onComplete)
+        } catch (e: Exception) {
+            onComplete?.invoke(false, e.message)
+        }
+    }
+
+    fun deleteActiveCall(context: Context, callId: Int, onComplete: ((Boolean, String?) -> Unit)? = null) {
+        deleteFromSupabase(context, "chamadas_ativas", "id", callId, onComplete)
+    }
+
     fun syncPost(context: Context, post: Post, onComplete: ((Boolean, String?) -> Unit)? = null) {
         try {
             val json = JSONObject().apply {
@@ -734,8 +800,33 @@ object SupabaseSync {
                         )
                     )
                 }
+        }
+
+        // 16. Active Calls (Zoom)
+        getFromSupabaseSync(context, "chamadas_ativas")?.let { jsonStr ->
+            try {
+                val arr = JSONArray(jsonStr)
+                val list = mutableListOf<ActiveCall>()
+                for (i in 0 until arr.length()) {
+                    val op = arr.getJSONObject(i)
+                    list.add(
+                        ActiveCall(
+                            id = op.getInt("id"),
+                            zoom_meeting_id = op.getString("zoom_meeting_id"),
+                            zoom_password = op.getString("zoom_password"),
+                            status = op.getString("status"),
+                            criado_por = op.getString("criado_por"),
+                            subject_id = if (op.isNull("subject_id")) null else op.getInt("subject_id"),
+                            created_at = op.optLong("created_at", System.currentTimeMillis())
+                        )
+                    )
+                }
+                dao.clearActiveCalls()
+                if (list.isNotEmpty()) {
+                    dao.insertActiveCalls(list)
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Erro ao processar audit_logs: ${e.message}")
+                Log.e(TAG, "Erro ao processar chamadas_ativas: ${e.message}")
             }
         }
     }
