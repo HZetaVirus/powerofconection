@@ -661,7 +661,9 @@ fun MainApp(
                             onJoinVideoTutoria = { _, _ -> },
                             allRoles = allRoles,
                             profiles = profiles,
-                            currentUserProfile = currentUserProfile
+                            currentUserProfile = currentUserProfile,
+                            activeCalls = activeCallsState,
+                            viewModel = viewModel
                         )
                     }
                     "chat" -> {
@@ -4791,7 +4793,9 @@ fun HelpAndGroupsHub(
     onJoinVideoTutoria: (String, String) -> Unit = { _, _ -> },
     allRoles: List<UserRole> = emptyList(),
     profiles: List<Profile> = emptyList(),
-    currentUserProfile: Profile? = null
+    currentUserProfile: Profile? = null,
+    activeCalls: List<com.example.data.ActiveCall> = emptyList(),
+    viewModel: MainViewModel? = null
 ) {
     if (activeGroupDetail != null) {
         // Nested View: Study Group Details View
@@ -4867,19 +4871,25 @@ fun HelpAndGroupsHub(
                 }
 
                 // --------------------------------------------------------------------
-                // LIVE TUTORING CARD (JITSI INFRAME) - Accessible to Period & Subject Staff
+                // DYNAMIC ZOOM VIDEO CALL CARD ("Vídeo-aula") - Visible ONLY when a call is active
                 // --------------------------------------------------------------------
-                if (currentUserId == "jefersonribeiro199026@gmail.com") {
-                    val isStaffUser = currentUserRole == "moderador" || currentUserRole == "super_admin"
+                val mySubjectName = currentUserProfile?.selected_materia
+                val activeMeeting = activeCalls.firstOrNull { call ->
+                    call.status == "ativa" && (call.subject_id == null || subjects.find { it.id == call.subject_id }?.title?.equals(mySubjectName, ignoreCase = true) == true)
+                }
 
+                if (activeMeeting != null) {
+                    var isJoiningCall by remember { mutableStateOf(false) }
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
                         ),
-                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+                        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(
@@ -4890,15 +4900,15 @@ fun HelpAndGroupsHub(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
                                         imageVector = Icons.Filled.VideoCall,
-                                        contentDescription = "Live Tutoria",
+                                        contentDescription = "Vídeo-aula Ativa",
                                         tint = UerjBlue,
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(28.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        "Monitoria Online ao Vivo (Zoom Meeting SDK)",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
+                                        "Vídeo-aula",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Black,
                                         color = UerjBlue
                                     )
                                 }
@@ -4906,136 +4916,73 @@ fun HelpAndGroupsHub(
                                 Box(
                                     modifier = Modifier
                                         .background(UerjGreen.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
-                                    Text(
-                                        "EM APP",
-                                        color = UerjGreen,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Black
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .background(UerjGreen, CircleShape)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            "AO VIVO",
+                                            color = UerjGreen,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Black
+                                        )
+                                    }
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
-                            if (isStaffUser) {
-                                // Staff tutoring manager controls
-                                Text(
-                                    text = "Preste tutoria ao vivo para as salas do seu período (${currentUserProfile?.periodo ?: "Geral"}). Escolha a matéria para iniciar a transmissão:",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "Uma vídeo-aula interativa via Zoom com o seu tutor foi iniciada e está acontecendo agora! Clique no botão abaixo para ingressar de forma 100% in-app.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
 
-                                var selectedSubjectForTutoria by remember { mutableStateOf(subjects.firstOrNull()) }
-                                var showSubjectDropdown by remember { mutableStateOf(false) }
+                            Spacer(modifier = Modifier.height(14.dp))
 
-                                Box(modifier = Modifier.fillMaxWidth()) {
-                                    OutlinedButton(
-                                        onClick = { showSubjectDropdown = true },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = selectedSubjectForTutoria?.title ?: "Selecionar Disciplina",
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Icon(Icons.Filled.ArrowDropDown, contentDescription = "Expandir")
-                                        }
-                                    }
-
-                                    DropdownMenu(
-                                        expanded = showSubjectDropdown,
-                                        onDismissRequest = { showSubjectDropdown = false },
-                                        modifier = Modifier.fillMaxWidth(0.9f)
-                                    ) {
-                                        subjects.forEach { sub ->
-                                            DropdownMenuItem(
-                                                text = { Text(sub.title, style = MaterialTheme.typography.bodyMedium) },
-                                                onClick = {
-                                                    selectedSubjectForTutoria = sub
-                                                    showSubjectDropdown = false
+                            Button(
+                                onClick = {
+                                    if (viewModel != null) {
+                                        isJoiningCall = true
+                                        SupabaseSync.fetchZoomTokens(context, activeMeeting.zoom_meeting_id) { success, signature, zak ->
+                                            if (success && signature != null) {
+                                                ZoomSDKManager.inicializarSDK(context, signature) { initSuccess, _ ->
+                                                    isJoiningCall = false
+                                                    if (initSuccess) {
+                                                        viewModel.joinZoomMeeting(
+                                                            context = context,
+                                                            meetingNo = activeMeeting.zoom_meeting_id,
+                                                            password = activeMeeting.zoom_password,
+                                                            displayName = currentUserProfile?.nome ?: "Discente UERJ"
+                                                        ) { _ -> }
+                                                    } else {
+                                                        Toast.makeText(context, "Erro de inicialização do SDK Zoom", Toast.LENGTH_SHORT).show()
+                                                    }
                                                 }
-                                            )
+                                            } else {
+                                                isJoiningCall = false
+                                                Toast.makeText(context, "Erro ao obter assinatura do Zoom no Backend", Toast.LENGTH_SHORT).show()
+                                            }
                                         }
                                     }
-                                }
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                Button(
-                                    onClick = {
-                                        val currentSubject = selectedSubjectForTutoria ?: subjects.firstOrNull()
-                                        if (currentSubject != null) {
-                                            val safeSub = currentSubject.title
-                                                .replace(" ", "")
-                                                .replace("ã", "a")
-                                                .replace("é", "e")
-                                                .replace("á", "a")
-                                                .replace("õ", "o")
-                                                .replace("í", "i")
-                                                .replace("ç", "c")
-                                            val safePeriod = (currentUserProfile?.periodo ?: "Geral")
-                                                .replace(" ", "")
-                                                .replace("º", "")
-                                                .replace("ª", "")
-                                            val jitsiRoomName = "Uerj_Tutoria_${safeSub}_${safePeriod}"
-                                            val title = "Monitoria: ${currentSubject.title} [${currentUserProfile?.periodo ?: "Semestre"}]"
-                                            onJoinVideoTutoria(jitsiRoomName, title)
-                                        } else {
-                                            Toast.makeText(context, "Nenhuma disciplina disponível.", Toast.LENGTH_SHORT).show()
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(containerColor = UerjBlue)
-                                ) {
-                                    Icon(Icons.Filled.VideoCameraFront, contentDescription = "Join")
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Abrir Sala de Atendimento (Tutor)")
-                                }
-                            } else {
-                                // Student view - direct in-app access to assigned tutor room
-                                val studentPeriodo = currentUserProfile?.periodo ?: "1º Período"
-                                val studentMateria = currentUserProfile?.selected_materia ?: getDefaultSubjectForCourse(currentUserProfile?.curso ?: "Lic. Pedagogia/UERJ", studentPeriodo)
-
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = UerjBlue),
+                                enabled = !isJoiningCall
+                            ) {
+                                Icon(Icons.Filled.VideoCameraFront, contentDescription = "Entrar")
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Tutoria disponível para você em $studentMateria [$studentPeriodo]. Clique abaixo para entrar no Plantão de Dúvidas ao vivo com seu tutor e tirar dúvidas no modelo inframe integrado.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = if (isJoiningCall) "Conectando..." else "Entrar na Vídeo-aula",
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
                                 )
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                Button(
-                                    onClick = {
-                                        val safeSub = studentMateria
-                                            .replace(" ", "")
-                                            .replace("ã", "a")
-                                            .replace("é", "e")
-                                            .replace("á", "a")
-                                            .replace("õ", "o")
-                                            .replace("í", "i")
-                                            .replace("ç", "c")
-                                        val safePeriod = studentPeriodo
-                                            .replace(" ", "")
-                                            .replace("º", "")
-                                            .replace("ª", "")
-                                        val jitsiRoomName = "Uerj_Tutoria_${safeSub}_${safePeriod}"
-                                        val title = "Sessão de Tutoria: $studentMateria [$studentPeriodo]"
-                                        onJoinVideoTutoria(jitsiRoomName, title)
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(containerColor = UerjGreen)
-                                ) {
-                                    Icon(Icons.Filled.VideoCameraFront, contentDescription = "Join")
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Entrar na Reunião de Tutoria")
-                                }
                             }
                         }
                     }

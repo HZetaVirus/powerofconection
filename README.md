@@ -20,7 +20,7 @@ Ferramenta visual para organização de conteúdo, permitindo que os alunos crie
 ### 4. Salas de Chat e Vídeo
 Comunicação em tempo real integrada:
 - **Salas de Chat:** Canais de conversa para troca rápida de informações.
-- **Integração Jitsi:** Possibilidade de iniciar vídeoconferências diretamente pelo aplicativo para reuniões de grupo ou monitorias.
+- **Integração Zoom:** Possibilidade de iniciar e participar de vídeo-aulas e monitorias diretamente pelo aplicativo via Zoom Meeting SDK de forma 100% integrada.
 
 ### 5. Agenda Acadêmica
 Gestão de tempo com calendário integrado para acompanhamento de prazos, eventos da faculdade e reuniões agendadas pelos grupos de estudo.
